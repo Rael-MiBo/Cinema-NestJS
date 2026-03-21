@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { LanchesCombosService } from './lanches-combos.service';
-import { CreateLancheComboDto } from './dto/create-lanche-combo.dto';
+import { CreateLanchesComboDto } from './dto/create-lanche-combo.dto';
 import { UpdateLancheComboDto } from './dto/update-lanche-combo.dto';
 
 @Controller('lanches-combos')
@@ -8,8 +8,8 @@ export class LanchesCombosController {
   constructor(private readonly lanchesCombosService: LanchesCombosService) {}
 
   @Post()
-  create(@Body() createLancheComboDto: CreateLancheComboDto) {
-    return this.lanchesCombosService.create(createLancheComboDto);
+  create(@Body() createLanchesComboDto: CreateLanchesComboDto) {
+    return this.lanchesCombosService.create(createLanchesComboDto);
   }
 
   @Get()

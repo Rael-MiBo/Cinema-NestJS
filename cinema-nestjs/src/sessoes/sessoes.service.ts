@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSessaoDto } from './dto/create-sessao.dto';
 import { UpdateSessaoDto } from './dto/update-sessao.dto';
@@ -8,12 +8,28 @@ export class SessoesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createSessaoDto: CreateSessaoDto) {
+    const novaDataInicio = new Date(createSessaoDto.data);
+
+    if (novaDataInicio < new Date()) {
+      throw new BadRequestException('A data da sessão não pode ser no passado.');
+    }
+
     const filme = await this.prisma.filme.findUnique({
       where: { id: createSessaoDto.filmeId },
     });
 
     if (!filme) {
       throw new NotFoundException('Filme não encontrado.');
+    }
+
+    const inicioExibicao = new Date(filme.dataIniciaExibicao);
+    inicioExibicao.setHours(0, 0, 0, 0);
+
+    const fimExibicao = new Date(filme.dataFinalExibicao);
+    fimExibicao.setHours(23, 59, 59, 999);
+
+    if (novaDataInicio < inicioExibicao || novaDataInicio > fimExibicao) {
+      throw new BadRequestException('A data da sessão está fora do período de exibição do filme.');
     }
 
     const sala = await this.prisma.sala.findUnique({
@@ -24,7 +40,6 @@ export class SessoesService {
       throw new NotFoundException('Sala não encontrada.');
     }
 
-    const novaDataInicio = new Date(createSessaoDto.data);
     const novaDataFim = new Date(novaDataInicio.getTime() + filme.duracao * 60000);
 
     const sessoesExistentes = await this.prisma.sessao.findMany({
@@ -57,6 +72,7 @@ export class SessoesService {
       include: {
         filme: true,
         sala: true,
+        ingressos: true,
       },
     });
   }
@@ -84,12 +100,28 @@ export class SessoesService {
     const salaId = updateSessaoDto.salaId || sessaoAtual.salaId;
     const dataString = updateSessaoDto.data || sessaoAtual.data.toISOString();
 
+    const novaDataInicio = new Date(dataString);
+
+    if (novaDataInicio < new Date()) {
+      throw new BadRequestException('A data da sessão não pode ser no passado.');
+    }
+
     const filme = await this.prisma.filme.findUnique({
       where: { id: filmeId },
     });
 
     if (!filme) {
       throw new NotFoundException('Filme não encontrado.');
+    }
+
+    const inicioExibicao = new Date(filme.dataIniciaExibicao);
+    inicioExibicao.setHours(0, 0, 0, 0);
+
+    const fimExibicao = new Date(filme.dataFinalExibicao);
+    fimExibicao.setHours(23, 59, 59, 999);
+
+    if (novaDataInicio < inicioExibicao || novaDataInicio > fimExibicao) {
+      throw new BadRequestException('A data da sessão está fora do período de exibição do filme.');
     }
 
     const sala = await this.prisma.sala.findUnique({
@@ -100,7 +132,6 @@ export class SessoesService {
       throw new NotFoundException('Sala não encontrada.');
     }
 
-    const novaDataInicio = new Date(dataString);
     const novaDataFim = new Date(novaDataInicio.getTime() + filme.duracao * 60000);
 
     const sessoesExistentes = await this.prisma.sessao.findMany({
@@ -133,9 +164,19 @@ export class SessoesService {
   }
 
   async remove(id: number) {
-    await this.findOne(id);
-    return this.prisma.sessao.delete({
-      where: { id },
+    const sessao = await this.prisma.sessao.findUnique({ 
+      where: { id }, 
+      include: { ingressos: true } 
     });
+    
+    if (!sessao) {
+      throw new NotFoundException('Sessão não encontrada.');
+    }
+    
+    if (sessao.ingressos.length > 0) {
+      throw new BadRequestException('Não é possível remover uma sessão com ingressos vendidos.');
+    }
+    
+    return this.prisma.sessao.delete({ where: { id } });
   }
 }

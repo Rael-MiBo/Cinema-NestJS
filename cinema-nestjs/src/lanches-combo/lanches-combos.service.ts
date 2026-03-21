@@ -1,15 +1,23 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateLancheComboDto } from './dto/create-lanche-combo.dto';
+import { CreateLanchesComboDto } from './dto/create-lanche-combo.dto';
 import { UpdateLancheComboDto } from './dto/update-lanche-combo.dto';
 
 @Injectable()
 export class LanchesCombosService {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(createLancheComboDto: CreateLancheComboDto) {
+  create(createLanchesComboDto: CreateLanchesComboDto) {
+    const subtotal = createLanchesComboDto.valorUnitario * createLanchesComboDto.qtUnidade;
+
     return this.prisma.lancheCombo.create({
-      data: createLancheComboDto,
+      data: {
+        nome: createLanchesComboDto.nome,
+        descricao: createLanchesComboDto.descricao,
+        valorUnitario: createLanchesComboDto.valorUnitario,
+        qtUnidade: createLanchesComboDto.qtUnidade,
+        subtotal: subtotal,
+      },
     });
   }
 
@@ -23,17 +31,25 @@ export class LanchesCombosService {
     });
 
     if (!lanche) {
-      throw new NotFoundException('Lanche ou Combo não encontrado.');
+      throw new NotFoundException('Lanche não encontrado.');
     }
 
     return lanche;
   }
 
-  async update(id: number, updateLancheComboDto: UpdateLancheComboDto) {
-    await this.findOne(id);
+  async update(id: number, updateLanchesComboDto: UpdateLancheComboDto) {
+    const lanche = await this.findOne(id);
+
+    const valorUnitario = updateLanchesComboDto.valorUnitario ?? lanche.valorUnitario;
+    const qtUnidade = updateLanchesComboDto.qtUnidade ?? lanche.qtUnidade;
+    const subtotal = valorUnitario * qtUnidade;
+
     return this.prisma.lancheCombo.update({
       where: { id },
-      data: updateLancheComboDto,
+      data: {
+        ...updateLanchesComboDto,
+        subtotal: subtotal,
+      },
     });
   }
 

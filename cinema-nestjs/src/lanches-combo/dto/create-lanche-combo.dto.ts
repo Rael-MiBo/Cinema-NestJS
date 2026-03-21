@@ -1,8 +1,7 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsInt } from 'class-validator';
 
-export class CreateLancheComboDto {
+export class CreateLanchesComboDto {
   @IsString()
-  @IsNotEmpty()
   nome: string;
 
   @IsString()
@@ -10,10 +9,8 @@ export class CreateLancheComboDto {
   descricao?: string;
 
   @IsNumber()
-  @Min(0)
-  preco: number;
+  valorUnitario: number;
 
-  @IsString()
-  @IsOptional()
-  itens?: string;
+  @IsInt()
+  qtUnidade: number;
 }

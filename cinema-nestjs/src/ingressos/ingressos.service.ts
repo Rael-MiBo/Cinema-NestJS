@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateIngressoDto } from './dto/create-ingresso.dto';
 import { UpdateIngressoDto } from './dto/update-ingresso.dto';
@@ -17,16 +17,39 @@ export class IngressosService {
       throw new NotFoundException('Sessão não encontrada.');
     }
 
-    const ingressosVendidos = await this.prisma.ingresso.count({
-      where: { sessaoId: createIngressoDto.sessaoId },
+    const mapaPoltronas = sessao.sala.poltronas as number[][];
+    const { fila, assento } = createIngressoDto;
+
+    if (!mapaPoltronas[fila] || mapaPoltronas[fila][assento] !== 1) {
+      throw new BadRequestException('Esta poltrona não existe na sala.');
+    }
+
+    const ingressoExistente = await this.prisma.ingresso.findFirst({
+      where: {
+        sessaoId: createIngressoDto.sessaoId,
+        fila: fila,
+        assento: assento,
+      },
     });
 
-    if (ingressosVendidos >= sessao.sala.capacidade) {
-      throw new ConflictException('A capacidade máxima da sala para esta sessão já foi atingida.');
+    if (ingressoExistente) {
+      throw new ConflictException('Esta poltrona já está reservada para esta sessão.');
+    }
+
+    let valorFinal = sessao.valorIngresso;
+
+    if (createIngressoDto.tipo.toLowerCase() === 'meia') {
+      valorFinal = sessao.valorIngresso / 2;
     }
 
     return this.prisma.ingresso.create({
-      data: createIngressoDto,
+      data: {
+        tipo: createIngressoDto.tipo,
+        valorPago: valorFinal,
+        sessaoId: createIngressoDto.sessaoId,
+        fila: fila,
+        assento: assento,
+      },
     });
   }
 
@@ -51,29 +74,6 @@ export class IngressosService {
 
   async update(id: number, updateIngressoDto: UpdateIngressoDto) {
     await this.findOne(id);
-
-    if (updateIngressoDto.sessaoId) {
-      const sessao = await this.prisma.sessao.findUnique({
-        where: { id: updateIngressoDto.sessaoId },
-        include: { sala: true },
-      });
-
-      if (!sessao) {
-        throw new NotFoundException('Sessão não encontrada.');
-      }
-
-      const ingressosVendidos = await this.prisma.ingresso.count({
-        where: {
-          sessaoId: updateIngressoDto.sessaoId,
-          id: { not: id },
-        },
-      });
-
-      if (ingressosVendidos >= sessao.sala.capacidade) {
-        throw new ConflictException('A capacidade máxima da sala para esta sessão já foi atingida.');
-      }
-    }
-
     return this.prisma.ingresso.update({
       where: { id },
       data: updateIngressoDto,

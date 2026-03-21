@@ -1,14 +1,16 @@
-import { IsInt, IsNotEmpty, IsNumber, IsString, Min } from 'class-validator';
+import { IsInt, IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateIngressoDto {
   @IsString()
   @IsNotEmpty()
   tipo: string;
 
-  @IsNumber()
-  @Min(0)
-  valorPago: number;
-
   @IsInt()
   sessaoId: number;
+
+  @IsInt()
+  fila: number;
+
+  @IsInt()
+  assento: number;
 }

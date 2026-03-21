@@ -1,0 +1,1225 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CineNest - Admin</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+      :root {
+        --bg-dark: #0f172a;
+        --bg-panel: #1e293b;
+        --bg-input: #0f172a;
+        --border-color: #334155;
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+        --accent: #e50914;
+        --accent-hover: #f40612;
+        --success: #10b981;
+        --danger: #ef4444;
+        --radius: 12px;
+        --sidebar-width: 260px;
+      }
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--bg-dark);
+        color: var(--text-main);
+        margin: 0;
+        padding: 0;
+        display: flex;
+        min-height: 100vh;
+      }
+
+      .sidebar-nav {
+        width: var(--sidebar-width);
+        background-color: var(--bg-panel);
+        border-right: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        height: 100vh;
+        z-index: 10;
+      }
+
+      .brand {
+        padding: 24px;
+        font-size: 1.5rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .brand i {
+        color: var(--accent);
+        font-size: 1.8rem;
+      }
+      .brand span {
+        color: var(--accent);
+      }
+
+      .nav-links {
+        padding: 20px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      .nav-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        padding: 12px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: all 0.2s ease;
+        text-align: left;
+        width: 100%;
+      }
+
+      .nav-btn i {
+        font-size: 1.2rem;
+      }
+      .nav-btn:hover {
+        background-color: rgba(255, 255, 255, 0.03);
+        color: var(--text-main);
+      }
+      .nav-btn.active {
+        background-color: rgba(229, 9, 20, 0.1);
+        color: var(--accent);
+        font-weight: 600;
+      }
+
+      .main-content {
+        flex: 1;
+        margin-left: var(--sidebar-width);
+        padding: 30px 40px;
+        max-width: 1400px;
+      }
+
+      .page-header {
+        margin-bottom: 30px;
+      }
+      .page-header h1 {
+        margin: 0;
+        font-size: 1.8rem;
+        font-weight: 700;
+      }
+      .page-header p {
+        margin: 5px 0 0 0;
+        color: var(--text-muted);
+      }
+
+      .tab-content {
+        display: none;
+        animation: fadeIn 0.3s ease;
+      }
+      .tab-content.active {
+        display: block;
+      }
+
+      .grid-layout {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 30px;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(5px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .panel {
+        background-color: var(--bg-panel);
+        padding: 24px;
+        border-radius: var(--radius);
+        border: 1px solid var(--border-color);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        height: fit-content;
+      }
+
+      h2 {
+        margin-top: 0;
+        color: var(--text-main);
+        font-size: 1.1em;
+        font-weight: 600;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 12px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      h2 i {
+        color: var(--accent);
+      }
+
+      .form-group {
+        margin-bottom: 16px;
+      }
+      label {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--text-muted);
+        font-size: 0.85em;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      input,
+      select {
+        width: 100%;
+        padding: 10px 12px;
+        box-sizing: border-box;
+        background-color: var(--bg-input);
+        border: 1px solid var(--border-color);
+        color: var(--text-main);
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 0.95em;
+        transition: all 0.2s;
+      }
+
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.15);
+      }
+
+      button {
+        width: 100%;
+        padding: 12px;
+        background-color: var(--accent);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 1em;
+        cursor: pointer;
+        margin-top: 10px;
+        font-weight: 600;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      button:hover {
+        background-color: var(--accent-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(229, 9, 20, 0.3);
+      }
+      button:active {
+        transform: translateY(0);
+      }
+
+      .btn-small {
+        width: auto;
+        padding: 6px 12px;
+        font-size: 0.85em;
+        margin-top: 0;
+        background-color: var(--border-color);
+        color: var(--text-main);
+        box-shadow: none;
+      }
+      .btn-small:hover {
+        background-color: var(--danger);
+      }
+
+      .divider {
+        height: 1px;
+        background-color: var(--border-color);
+        margin: 30px 0;
+      }
+
+      select[multiple] {
+        height: 140px;
+        padding: 8px;
+      }
+      select[multiple] option {
+        padding: 8px;
+        border-radius: 4px;
+        margin-bottom: 2px;
+      }
+      select[multiple] option:checked {
+        background-color: var(--accent);
+        color: white;
+      }
+
+      .grid-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+      }
+
+      .card {
+        background-color: var(--bg-input);
+        border-radius: 8px;
+        padding: 20px;
+        border: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent), #ff4b4b);
+      }
+      .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+        border-color: #475569;
+      }
+
+      .card-title {
+        font-weight: 700;
+        margin-bottom: 12px;
+        font-size: 1.15em;
+        color: white;
+      }
+      .card-info {
+        font-size: 0.9em;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .card-info i {
+        color: #cbd5e1;
+      }
+      .card-info b {
+        color: #cbd5e1;
+      }
+
+      ul {
+        padding-left: 0;
+        list-style: none;
+        margin: 0;
+      }
+      li {
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--bg-input);
+        padding: 12px 16px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        font-size: 0.95em;
+      }
+
+      .dashboard-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+      .stat-card {
+        background: var(--bg-panel);
+        padding: 24px;
+        border-radius: var(--radius);
+        border: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+      .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background: rgba(229, 9, 20, 0.1);
+        color: var(--accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+      }
+      .stat-info h3 {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .stat-info p {
+        margin: 5px 0 0 0;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--text-main);
+      }
+
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--bg-dark);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border-color);
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #475569;
+      }
+
+      @media (max-width: 900px) {
+        .grid-layout {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar-nav">
+      <div class="brand">
+        <i class="ph-fill ph-popcorn"></i> Cine<span>Nest</span>
+      </div>
+      <div class="nav-links">
+        <button class="nav-btn active" onclick="openTab('tab-dashboard')">
+          <i class="ph ph-squares-four"></i> Visão Geral
+        </button>
+        <button class="nav-btn" onclick="openTab('tab-catalogo')">
+          <i class="ph ph-film-strip"></i> Catálogo
+        </button>
+        <button class="nav-btn" onclick="openTab('tab-infra')">
+          <i class="ph ph-armchair"></i> Infraestrutura
+        </button>
+        <button class="nav-btn" onclick="openTab('tab-vendas')">
+          <i class="ph ph-shopping-cart"></i> PDV / Vendas
+        </button>
+        <button class="nav-btn" onclick="openTab('tab-gerenciar')">
+          <i class="ph ph-receipt"></i> Gerenciar Pedidos
+        </button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div id="tab-dashboard" class="tab-content active">
+        <div class="page-header">
+          <h1>Visão Geral</h1>
+          <p>Resumo das atividades do cinema</p>
+        </div>
+
+        <div class="dashboard-stats">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="ph-fill ph-currency-dollar"></i>
+            </div>
+            <div class="stat-info">
+              <h3>Receita Total</h3>
+              <p id="dash-receita">R$ 0,00</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="ph-fill ph-ticket"></i></div>
+            <div class="stat-info">
+              <h3>Pedidos Realizados</h3>
+              <p id="dash-pedidos">0</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="ph-fill ph-film-strip"></i></div>
+            <div class="stat-info">
+              <h3>Filmes em Cartaz</h3>
+              <p id="dash-filmes">0</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="ph-fill ph-video-camera"></i></div>
+            <div class="stat-info">
+              <h3>Sessões Agendadas</h3>
+              <p id="dash-sessoes">0</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>
+            <i class="ph ph-clock-counter-clockwise"></i> Pedidos Recentes
+          </h2>
+          <ul id="dash-pedidos-recentes"></ul>
+        </div>
+      </div>
+
+      <div id="tab-catalogo" class="tab-content">
+        <div class="page-header">
+          <h1>Catálogo</h1>
+          <p>Gerenciamento de filmes e gêneros</p>
+        </div>
+        <div class="grid-layout">
+          <aside class="panel">
+            <h2><i class="ph ph-tag"></i> Novo Gênero</h2>
+            <form id="form-genero">
+              <div class="form-group">
+                <label>Nome do Gênero</label
+                ><input type="text" id="genero-nome" required />
+              </div>
+              <button type="submit">
+                <i class="ph ph-check-circle"></i> Salvar Gênero
+              </button>
+            </form>
+            <div class="divider"></div>
+            <h2><i class="ph ph-film-strip"></i> Novo Filme</h2>
+            <form id="form-filme">
+              <div class="form-group">
+                <label>Título</label
+                ><input type="text" id="filme-titulo" required />
+              </div>
+              <div class="form-group">
+                <label>Sinopse</label><input type="text" id="filme-sinopse" />
+              </div>
+              <div class="form-group">
+                <label>Elenco</label><input type="text" id="filme-elenco" />
+              </div>
+              <div
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px"
+              >
+                <div class="form-group">
+                  <label>Duração (min)</label
+                  ><input type="number" id="filme-duracao" required />
+                </div>
+                <div class="form-group">
+                  <label>Classificação</label>
+                  <select id="filme-class" required>
+                    <option value="L">L</option>
+                    <option value="+10">+10</option>
+                    <option value="+14">+14</option>
+                    <option value="16">16</option>
+                    <option value="+18">+18</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Início da Exibição</label
+                ><input type="date" id="filme-inicio" required />
+              </div>
+              <div class="form-group">
+                <label>Fim da Exibição</label
+                ><input type="date" id="filme-fim" required />
+              </div>
+              <div class="form-group">
+                <label>Gênero</label
+                ><select id="filme-genero" required></select>
+              </div>
+              <button type="submit">
+                <i class="ph ph-plus-circle"></i> Cadastrar Filme
+              </button>
+            </form>
+          </aside>
+          <div
+            class="panel"
+            style="
+              background: transparent;
+              border: none;
+              box-shadow: none;
+              padding: 0;
+            "
+          >
+            <div id="filmes-grid" class="grid-cards"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-infra" class="tab-content">
+        <div class="page-header">
+          <h1>Infraestrutura</h1>
+          <p>Configuração de salas, sessões e lanchonete</p>
+        </div>
+        <div class="grid-layout">
+          <aside class="panel">
+            <h2><i class="ph ph-armchair"></i> Nova Sala</h2>
+            <form id="form-sala">
+              <div class="form-group">
+                <label>Número da Sala</label
+                ><input type="text" id="sala-numero" required />
+              </div>
+              <div
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px"
+              >
+                <div class="form-group">
+                  <label>Qtd. Filas</label
+                  ><input type="number" id="sala-filas" required min="1" />
+                </div>
+                <div class="form-group">
+                  <label>Assentos/Fila</label
+                  ><input type="number" id="sala-assentos" required min="1" />
+                </div>
+              </div>
+              <button type="submit">
+                <i class="ph ph-check-circle"></i> Salvar Sala
+              </button>
+            </form>
+            <div class="divider"></div>
+            <h2><i class="ph ph-video-camera"></i> Nova Sessão</h2>
+            <form id="form-sessao">
+              <div class="form-group">
+                <label>Filme</label
+                ><select id="sessao-filme" required></select>
+              </div>
+              <div class="form-group">
+                <label>Sala</label
+                ><select id="sessao-sala" required></select>
+              </div>
+              <div class="form-group">
+                <label>Data e Hora</label
+                ><input type="datetime-local" id="sessao-data" required />
+              </div>
+              <div class="form-group">
+                <label>Valor Base (R$)</label
+                ><input type="number" step="0.01" id="sessao-valor" required />
+              </div>
+              <button type="submit">
+                <i class="ph ph-calendar-plus"></i> Agendar Sessão
+              </button>
+            </form>
+            <div class="divider"></div>
+            <h2><i class="ph ph-popcorn"></i> Novo Lanche/Combo</h2>
+            <form id="form-lanche">
+              <div class="form-group">
+                <label>Nome</label
+                ><input type="text" id="lanche-nome" required />
+              </div>
+              <div class="form-group">
+                <label>Descrição</label><input type="text" id="lanche-desc" />
+              </div>
+              <div
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px"
+              >
+                <div class="form-group">
+                  <label>Valor (R$)</label
+                  ><input
+                    type="number"
+                    step="0.01"
+                    id="lanche-valor"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label>Estoque</label
+                  ><input type="number" id="lanche-qtd" required />
+                </div>
+              </div>
+              <button type="submit">
+                <i class="ph ph-plus-circle"></i> Salvar Lanche
+              </button>
+            </form>
+          </aside>
+          <div style="display: flex; flex-direction: column; gap: 30px">
+            <div class="panel">
+              <h2><i class="ph ph-door"></i> Salas Cadastradas</h2>
+              <ul id="salas-list"></ul>
+            </div>
+            <div class="panel">
+              <h2><i class="ph ph-ticket"></i> Sessões Agendadas</h2>
+              <ul id="sessoes-list"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-vendas" class="tab-content">
+        <div class="page-header">
+          <h1>Ponto de Venda</h1>
+          <p>Geração de ingressos e fechamento de pedidos</p>
+        </div>
+        <div class="grid-layout">
+          <aside class="panel">
+            <h2><i class="ph ph-ticket"></i> Vender Ingresso</h2>
+            <form id="form-ingresso">
+              <div class="form-group">
+                <label>Sessão</label
+                ><select id="ingresso-sessao" required></select>
+              </div>
+              <div class="form-group">
+                <label>Tipo de Ingresso</label>
+                <select id="ingresso-tipo" required>
+                  <option value="Inteira">Inteira</option>
+                  <option value="Meia">Meia</option>
+                </select>
+              </div>
+              <div
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px"
+              >
+                <div class="form-group">
+                  <label>Fila (Ex: 0)</label
+                  ><input type="number" id="ingresso-fila" required min="0" />
+                </div>
+                <div class="form-group">
+                  <label>Assento (Ex: 0)</label
+                  ><input
+                    type="number"
+                    id="ingresso-assento"
+                    required
+                    min="0"
+                  />
+                </div>
+              </div>
+              <button type="submit">
+                <i class="ph ph-printer"></i> Gerar Ingresso
+              </button>
+            </form>
+          </aside>
+          <aside class="panel">
+            <h2><i class="ph ph-shopping-cart"></i> Fechar Pedido</h2>
+            <form id="form-pedido">
+              <div class="form-group">
+                <label>Selecionar Ingressos Pendentes</label>
+                <select id="pedido-ingressos" multiple></select>
+                <small
+                  style="
+                    color: var(--text-muted);
+                    display: block;
+                    margin-top: 5px;
+                  "
+                  >Segure CTRL para selecionar vários</small
+                >
+              </div>
+              <div class="form-group" style="margin-top: 20px">
+                <label>Adicionar Lanches</label>
+                <select id="pedido-lanches" multiple></select>
+              </div>
+              <button
+                type="submit"
+                style="background-color: var(--success); margin-top: 20px"
+              >
+                <i class="ph ph-check-fat"></i> Finalizar Pedido
+              </button>
+            </form>
+          </aside>
+        </div>
+      </div>
+
+      <div id="tab-gerenciar" class="tab-content">
+        <div class="page-header">
+          <h1>Gerenciar Pedidos</h1>
+          <p>Edição e consulta de pedidos finalizados</p>
+        </div>
+        <div class="grid-layout">
+          <aside class="panel">
+            <h2><i class="ph ph-magnifying-glass"></i> Selecionar Pedido</h2>
+            <div class="form-group">
+              <select
+                id="gerenciar-pedido-select"
+                onchange="carregarDetalhesPedido()"
+              ></select>
+            </div>
+            <div id="acoes-pedido" style="display: none">
+              <div class="divider"></div>
+              <h2><i class="ph ph-plus-circle"></i> Adicionar Itens</h2>
+              <div class="form-group">
+                <label>Ingressos Disponíveis</label>
+                <select id="add-ingresso-select"></select>
+                <button
+                  onclick="adicionarItemPedido('ingressos')"
+                  style="background-color: #3b82f6"
+                >
+                  <i class="ph ph-ticket"></i> Adicionar Ingresso
+                </button>
+              </div>
+              <div class="form-group" style="margin-top: 20px">
+                <label>Lanches Disponíveis</label>
+                <select id="add-lanche-select"></select>
+                <button
+                  onclick="adicionarItemPedido('lanches')"
+                  style="background-color: #3b82f6"
+                >
+                  <i class="ph ph-popcorn"></i> Adicionar Lanche
+                </button>
+              </div>
+            </div>
+          </aside>
+          <main class="panel">
+            <h2><i class="ph ph-receipt"></i> Detalhes do Pedido</h2>
+            <div id="detalhes-pedido-container">
+              <div
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  justify-content: center;
+                  padding: 40px;
+                  color: var(--text-muted);
+                "
+              >
+                <i
+                  class="ph ph-receipt"
+                  style="font-size: 3rem; margin-bottom: 10px; opacity: 0.5"
+                ></i>
+                <p>Selecione um pedido ao lado para visualizar os itens.</p>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      let pedidoAtualId = null;
+
+      function openTab(tabId) {
+        document
+          .querySelectorAll('.tab-content')
+          .forEach((el) => el.classList.remove('active'));
+        document
+          .querySelectorAll('.nav-btn')
+          .forEach((el) => el.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+        if (tabId === 'tab-dashboard') carregarDados();
+      }
+
+      async function request(endpoint, method = 'GET', body = null) {
+        const options = {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+        };
+        if (body) options.body = JSON.stringify(body);
+        const res = await fetch(endpoint, options);
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.message || 'Erro na requisição');
+        }
+        const text = await res.text();
+        return text ? JSON.parse(text) : {};
+      }
+
+      function popularSelect(
+        id,
+        lista,
+        valueKey,
+        textKey,
+        defaultOption = null,
+      ) {
+        const select = document.getElementById(id);
+        select.innerHTML = '';
+        if (defaultOption) {
+          const opt = document.createElement('option');
+          opt.value = '';
+          opt.textContent = defaultOption;
+          select.appendChild(opt);
+        }
+        lista.forEach((item) => {
+          const opt = document.createElement('option');
+          opt.value = item[valueKey];
+          opt.textContent = textKey(item);
+          select.appendChild(opt);
+        });
+      }
+
+      async function removerFilme(id) {
+        if (!confirm('Tem certeza que deseja remover este filme?')) return;
+        try {
+          await request(`/filmes/${id}`, 'DELETE');
+          carregarDados();
+        } catch (err) {
+          alert(err.message);
+        }
+      }
+
+      async function removerSala(id) {
+        if (!confirm('Tem certeza que deseja remover esta sala?')) return;
+        try {
+          await request(`/salas/${id}`, 'DELETE');
+          carregarDados();
+        } catch (err) {
+          alert(err.message);
+        }
+      }
+
+      async function removerSessao(id) {
+        if (!confirm('Tem certeza que deseja remover esta sessão?')) return;
+        try {
+          await request(`/sessoes/${id}`, 'DELETE');
+          carregarDados();
+        } catch (err) {
+          alert(err.message);
+        }
+      }
+
+      async function carregarDados() {
+        try {
+          const [generos, filmes, salas, sessoes, ingressos, lanches, pedidos] =
+            await Promise.all([
+              request('/generos'),
+              request('/filmes'),
+              request('/salas'),
+              request('/sessoes'),
+              request('/ingressos'),
+              request('/lanches-combos'),
+              request('/pedidos'),
+            ]);
+
+          document.getElementById('dash-filmes').textContent = filmes.length;
+          document.getElementById('dash-sessoes').textContent = sessoes.length;
+          document.getElementById('dash-pedidos').textContent = pedidos.length;
+
+          const receita = pedidos.reduce((acc, p) => acc + p.valorTotal, 0);
+          document.getElementById('dash-receita').textContent =
+            `R$ ${receita.toFixed(2)}`;
+
+          const pedidosRecentes = [...pedidos].reverse().slice(0, 5);
+          document.getElementById('dash-pedidos-recentes').innerHTML =
+            pedidosRecentes
+              .map(
+                (p) => `
+                    <li>
+                        <span><b>Pedido #${p.id}</b> - ${new Date(p.dataHora).toLocaleString()}</span>
+                        <span style="color: var(--success); font-weight: bold;">R$ ${p.valorTotal.toFixed(2)}</span>
+                    </li>
+                `,
+              )
+              .join('') ||
+            '<p style="color: var(--text-muted); padding: 10px;">Nenhum pedido recente.</p>';
+
+          popularSelect('filme-genero', generos, 'id', (g) => g.nome);
+
+          document.getElementById('filmes-grid').innerHTML = filmes
+            .map(
+              (f) => `
+                    <div class="card">
+                        <div>
+                            <div class="card-title">${f.titulo}</div>
+                            <div class="card-info"><i class="ph ph-clock"></i> ${f.duracao} min | ${f.classificacao}</div>
+                            <div class="card-info"><i class="ph ph-tag"></i> <b>Gênero:</b> ${f.genero ? f.genero.nome : ''}</div>
+                            <div class="card-info"><i class="ph ph-calendar"></i> <b>Exibição:</b> ${new Date(f.dataIniciaExibicao).toLocaleDateString()} a ${new Date(f.dataFinalExibicao).toLocaleDateString()}</div>
+                        </div>
+                        <button class="btn-small" style="background-color: var(--danger); margin-top: 15px; width: 100%; color: white; display:flex; justify-content:center;" onclick="removerFilme(${f.id})"><i class="ph ph-trash"></i> Remover</button>
+                    </div>
+                `,
+            )
+            .join('');
+          popularSelect('sessao-filme', filmes, 'id', (f) => f.titulo);
+
+          popularSelect(
+            'sessao-sala',
+            salas,
+            'id',
+            (s) => `Sala ${s.numero} (${s.capacidade} lug)`,
+          );
+          document.getElementById('salas-list').innerHTML = salas
+            .map(
+              (s) =>
+                `<li><span><i class="ph ph-door" style="margin-right: 8px;"></i> Sala ${s.numero} (Capacidade: ${s.capacidade})</span> <button class="btn-small" onclick="removerSala(${s.id})"><i class="ph ph-trash"></i></button></li>`,
+            )
+            .join('');
+
+          popularSelect(
+            'ingresso-sessao',
+            sessoes,
+            'id',
+            (s) => `${s.filme.titulo} - ${new Date(s.data).toLocaleString()}`,
+          );
+
+          document.getElementById('sessoes-list').innerHTML = sessoes
+            .map((s) => {
+              const vagasDisponiveis = s.sala.capacidade - s.ingressos.length;
+              return `<li>
+                        <span><i class="ph ph-video-camera" style="margin-right: 8px;"></i> ${s.filme.titulo} - Sala ${s.sala.numero} - ${new Date(s.data).toLocaleString()} <b style="color: var(--success); margin-left: 10px;">(Vagas: ${vagasDisponiveis})</b></span> 
+                        <button class="btn-small" onclick="removerSessao(${s.id})"><i class="ph ph-trash"></i></button>
+                    </li>`;
+            })
+            .join('');
+
+          popularSelect(
+            'pedido-ingressos',
+            ingressos.filter((i) => !i.pedidoId),
+            'id',
+            (i) =>
+              `Ingresso #${i.id} (${i.tipo}) - R$${i.valorPago.toFixed(2)}`,
+          );
+          popularSelect(
+            'pedido-lanches',
+            lanches,
+            'id',
+            (l) =>
+              `${l.qtUnidade}x ${l.nome} - R$${l.valorUnitario.toFixed(2)}`,
+          );
+
+          popularSelect(
+            'gerenciar-pedido-select',
+            pedidos,
+            'id',
+            (p) => `Pedido #${p.id} - R$ ${p.valorTotal.toFixed(2)}`,
+            'Selecione um pedido...',
+          );
+
+          if (pedidoAtualId) carregarDetalhesPedido(pedidoAtualId);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      async function carregarDetalhesPedido(idForcado = null) {
+        const select = document.getElementById('gerenciar-pedido-select');
+        const id = idForcado || select.value;
+        const container = document.getElementById('detalhes-pedido-container');
+        const acoes = document.getElementById('acoes-pedido');
+
+        if (!id) {
+          container.innerHTML =
+            '<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; color: var(--text-muted);"><i class="ph ph-receipt" style="font-size: 3rem; margin-bottom: 10px; opacity: 0.5;"></i><p>Selecione um pedido ao lado para visualizar os itens.</p></div>';
+          acoes.style.display = 'none';
+          pedidoAtualId = null;
+          return;
+        }
+
+        pedidoAtualId = parseInt(id);
+        select.value = pedidoAtualId;
+        acoes.style.display = 'block';
+
+        try {
+          const pedido = await request(`/pedidos/${id}`);
+          let html = `<div style="background: var(--bg-input); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border-color); margin-bottom: 20px;">`;
+          html += `<h3 style="color: white; margin-top: 0; display:flex; align-items:center; gap:8px;"><i class="ph ph-receipt"></i> Resumo do Pedido #${pedido.id}</h3>`;
+          html += `<p style="font-size: 1.5em; color: var(--success); font-weight: 700; margin: 10px 0;">Total: R$ ${pedido.valorTotal.toFixed(2)}</p></div>`;
+
+          html += `<p style="color: white; font-weight: 600;"><i class="ph ph-ticket"></i> Ingressos <span style="color: var(--text-muted); font-size: 0.9em; font-weight: normal;">(Inteira: ${pedido.qtInteira} | Meia: ${pedido.qtMeia})</span></p><ul>`;
+          if (pedido.ingressos.length === 0)
+            html +=
+              '<p style="color: var(--text-muted); padding-left: 10px;">Nenhum ingresso neste pedido.</p>';
+          pedido.ingressos.forEach((ing) => {
+            html += `<li><span>Ingresso #${ing.id} (${ing.tipo}) - R$ ${ing.valorPago.toFixed(2)}</span> <button class="btn-small" onclick="removerItemPedido('ingressos', ${ing.id})"><i class="ph ph-x"></i> Remover</button></li>`;
+          });
+
+          html += `</ul><div class="divider" style="margin: 20px 0;"></div><p style="color: white; font-weight: 600;"><i class="ph ph-popcorn"></i> Lanches & Combos</p><ul>`;
+          if (pedido.lanches.length === 0)
+            html +=
+              '<p style="color: var(--text-muted); padding-left: 10px;">Nenhum lanche neste pedido.</p>';
+          pedido.lanches.forEach((lan) => {
+            html += `<li><span>${lan.nome} - R$ ${lan.valorUnitario.toFixed(2)}</span> <button class="btn-small" onclick="removerItemPedido('lanches', ${lan.id})"><i class="ph ph-x"></i> Remover</button></li>`;
+          });
+          html += `</ul>`;
+
+          container.innerHTML = html;
+
+          const ingressos = await request('/ingressos');
+          popularSelect(
+            'add-ingresso-select',
+            ingressos.filter((i) => !i.pedidoId),
+            'id',
+            (i) => `Ingresso #${i.id} - R$${i.valorPago.toFixed(2)}`,
+            'Selecione...',
+          );
+          const lanches = await request('/lanches-combos');
+          popularSelect(
+            'add-lanche-select',
+            lanches.filter((l) => l.qtUnidade > 0),
+            'id',
+            (l) =>
+              `${l.qtUnidade}x ${l.nome} - R$${l.valorUnitario.toFixed(2)}`,
+            'Selecione...',
+          );
+        } catch (err) {
+          alert(err.message);
+        }
+      }
+
+      async function adicionarItemPedido(tipo) {
+        if (!pedidoAtualId) return;
+        const itemId = document.getElementById(
+          tipo === 'ingressos' ? 'add-ingresso-select' : 'add-lanche-select',
+        ).value;
+        if (!itemId)
+          return alert('Selecione um item na lista antes de adicionar.');
+        try {
+          await request(`/pedidos/${pedidoAtualId}/${tipo}/${itemId}`, 'POST');
+          carregarDados();
+        } catch (err) {
+          alert(err.message);
+        }
+      }
+
+      async function removerItemPedido(tipo, itemId) {
+        if (!pedidoAtualId) return;
+        try {
+          await request(
+            `/pedidos/${pedidoAtualId}/${tipo}/${itemId}`,
+            'DELETE',
+          );
+          carregarDados();
+        } catch (err) {
+          alert(err.message);
+        }
+      }
+
+      document.getElementById('form-genero').onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+          await request('/generos', 'POST', {
+            nome: document.getElementById('genero-nome').value,
+          });
+          alert('Gênero salvo!');
+          e.target.reset();
+          carregarDados();
+        } catch (err) {
+          alert(err.message);
+        }
+      };
+
+      document.getElementById('form-filme').onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+          await request('/filmes', 'POST', {
+            titulo: document.getElementById('filme-titulo').value,
+            sinopse: document.getElementById('filme-sinopse').value,
+            elenco: document.getElementById('filme-elenco').value,
+            duracao: parseInt(document.getElementById('filme-duracao').value),
+            classificacao: document.getElementById('filme-class').value,
+            dataIniciaExibicao: new Date(
+              document.getElementById('filme-inicio').value,
+            ).toISOString(),
+            dataFinalExibicao: new Date(
+              document.getElementById('filme-fim').value,
+            ).toISOString(),
+            generoId: parseInt(document.getElementById('filme-genero').value),
+          });
+          alert('Filme salvo!');
+          e.target.reset();
+          carregarDados();
+        } catch (err) {
+          alert(err.message);
+        }
+      };
+
+      document.getElementById('form-sala').onsubmit = async (e) => {
+        e.preventDefault();
+        const filas = parseInt(document.getElementById('sala-filas').value);
+        const assentos = parseInt(
+          document.getElementById('sala-assentos').value,
+        );
+        const matrizPoltronas = [];
+        for (let i = 0; i < filas; i++)
+          matrizPoltronas.push(Array(assentos).fill(1));
+        try {
+          await request('/salas', 'POST', {
+            numero: document.getElementById('sala-numero').value,
+            poltronas: matrizPoltronas,
+          });
+          alert('Sala salva!');
+          e.target.reset();
+          carregarDados();
+        } catch (err) {
+          alert(err.message);
+        }
+      };
+
+      document.getElementById('form-lanche').onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+          await request('/lanches-combos', 'POST', {
+            nome: document.getElementById('lanche-nome').value,
+            descricao: document.getElementById('lanche-desc').value,
+            valorUnitario: parseFloat(
+              document.getElementById('lanche-valor').value,
+            ),
+            qtUnidade: parseInt(document.getElementById('lanche-qtd').value),
+          });
+          alert('Lanche salvo!');
+          e.target.reset();
+          carregarDados();
+        } catch (err) {
+          alert(err.message);
+        }
+      };
+
+      document.getElementById('form-sessao').onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+          await request('/sessoes', 'POST', {
+            filmeId: parseInt(document.getElementById('sessao-filme').value),
+            salaId: parseInt(document.getElementById('sessao-sala').value),
+            data: new Date(
+              document.getElementById('sessao-data').value,
+            ).toISOString(),
+            valorIngresso: parseFloat(
+              document.getElementById('sessao-valor').value,
+            ),
+          });
+          alert('Sessão salva!');
+          e.target.reset();
+          carregarDados();
+        } catch (err) {
+          alert(err.message);
+        }
+      };
+
+      document.getElementById('form-ingresso').onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+          await request('/ingressos', 'POST', {
+            sessaoId: parseInt(
+              document.getElementById('ingresso-sessao').value,
+            ),
+            tipo: document.getElementById('ingresso-tipo').value,
+            fila: parseInt(document.getElementById('ingresso-fila').value),
+            assento: parseInt(
+              document.getElementById('ingresso-assento').value,
+            ),
+          });
+          alert('Ingresso gerado!');
+          e.target.reset();
+          carregarDados();
+        } catch (err) {
+          alert(err.message);
+        }
+      };
+
+      document.getElementById('form-pedido').onsubmit = async (e) => {
+        e.preventDefault();
+        const getSelected = (id) =>
+          Array.from(document.getElementById(id).selectedOptions).map((o) =>
+            parseInt(o.value),
+          );
+        try {
+          const pedido = await request('/pedidos', 'POST', {
+            ingressoIds: getSelected('pedido-ingressos'),
+            lancheComboIds: getSelected('pedido-lanches'),
+          });
+          alert(
+            `Pedido finalizado! Valor Total: R$ ${pedido.valorTotal.toFixed(2)}`,
+          );
+          e.target.reset();
+          carregarDados();
+        } catch (err) {
+          alert(err.message);
+        }
+      };
+
+      window.onload = carregarDados;
+    </script>
+  </body>
+</html>

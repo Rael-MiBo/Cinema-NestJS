@@ -31,4 +31,24 @@ export class PedidosController {
   remove(@Param('id') id: string) {
     return this.pedidosService.remove(+id);
   }
+
+  @Post(':id/lanches/:lancheId')
+  adicionarLanche(@Param('id') id: string, @Param('lancheId') lancheId: string) {
+    return this.pedidosService.adicionarLanche(+id, +lancheId);
+  }
+
+  @Delete(':id/lanches/:lancheId')
+  removerLanche(@Param('id') id: string, @Param('lancheId') lancheId: string) {
+    return this.pedidosService.removerLanche(+id, +lancheId);
+  }
+
+  @Post(':id/ingressos/:ingressoId')
+  adicionarIngresso(@Param('id') id: string, @Param('ingressoId') ingressoId: string) {
+    return this.pedidosService.adicionarIngresso(+id, +ingressoId);
+  }
+
+  @Delete(':id/ingressos/:ingressoId')
+  removerIngresso(@Param('id') id: string, @Param('ingressoId') ingressoId: string) {
+    return this.pedidosService.removerIngresso(+id, +ingressoId);
+  }
 }

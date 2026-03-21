@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateFilmeDto } from './dto/create-filme.dto';
 import { UpdateFilmeDto } from './dto/update-filme.dto';
@@ -64,9 +64,20 @@ export class FilmesService {
   }
 
   async remove(id: number) {
-    await this.findOne(id);
-    return this.prisma.filme.delete({
-      where: { id },
+    const filme = await this.prisma.filme.findUnique({ 
+      where: { id }, 
+      include: { sessoes: true } 
     });
+    
+    if (!filme) {
+      throw new NotFoundException('Filme não encontrado.');
+    }
+    
+    if (filme.sessoes.length > 0) {
+      throw new BadRequestException('Não é possível remover um filme com sessões agendadas.');
+    }
+    
+    return this.prisma.filme.delete({ where: { id } });
   }
+  
 }

@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSalaDto } from './dto/create-sala.dto';
 import { UpdateSalaDto } from './dto/update-sala.dto';
@@ -7,17 +7,22 @@ import { UpdateSalaDto } from './dto/update-sala.dto';
 export class SalasService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createSalaDto: CreateSalaDto) {
-    const salaExiste = await this.prisma.sala.findUnique({
-      where: { numero: createSalaDto.numero },
-    });
-
-    if (salaExiste) {
-      throw new ConflictException('Sala com este número já existe.');
+  create(createSalaDto: CreateSalaDto) {
+    let capacidadeCalculada = 0;
+    for (let i = 0; i < createSalaDto.poltronas.length; i++) {
+      for (let j = 0; j < createSalaDto.poltronas[i].length; j++) {
+        if (createSalaDto.poltronas[i][j] === 1) {
+          capacidadeCalculada++;
+        }
+      }
     }
 
     return this.prisma.sala.create({
-      data: createSalaDto,
+      data: {
+        numero: createSalaDto.numero,
+        capacidade: capacidadeCalculada,
+        poltronas: createSalaDto.poltronas,
+      },
     });
   }
 
@@ -40,26 +45,44 @@ export class SalasService {
   async update(id: number, updateSalaDto: UpdateSalaDto) {
     await this.findOne(id);
 
-    if (updateSalaDto.numero) {
-      const salaExiste = await this.prisma.sala.findUnique({
-        where: { numero: updateSalaDto.numero },
-      });
-
-      if (salaExiste && salaExiste.id !== id) {
-        throw new ConflictException('Sala com este número já existe.');
+    let capacidadeCalculada = undefined;
+    if (updateSalaDto.poltronas) {
+      let capacidadeCalculada: number | undefined = undefined;
+      for (let i = 0; i < updateSalaDto.poltronas.length; i++) {
+        for (let j = 0; j < updateSalaDto.poltronas[i].length; j++) {
+          if (updateSalaDto.poltronas[i][j] === 1) {
+            if (capacidadeCalculada === undefined) {
+              capacidadeCalculada = 0;
+            }
+            capacidadeCalculada++;
+          }
+        }
       }
     }
 
     return this.prisma.sala.update({
       where: { id },
-      data: updateSalaDto,
+      data: {
+        ...updateSalaDto,
+        capacidade: capacidadeCalculada,
+      },
     });
   }
 
   async remove(id: number) {
-    await this.findOne(id);
-    return this.prisma.sala.delete({
-      where: { id },
+    const sala = await this.prisma.sala.findUnique({ 
+      where: { id }, 
+      include: { sessoes: true } 
     });
+    
+    if (!sala) {
+      throw new NotFoundException('Sala não encontrada.');
+    }
+    
+    if (sala.sessoes.length > 0) {
+      throw new BadRequestException('Não é possível remover uma sala com sessões agendadas.');
+    }
+    
+    return this.prisma.sala.delete({ where: { id } });
   }
 }

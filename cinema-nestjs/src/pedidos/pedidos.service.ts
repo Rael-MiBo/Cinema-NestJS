@@ -9,6 +9,8 @@ export class PedidosService {
 
   async create(createPedidoDto: CreatePedidoDto) {
     let valorTotal = 0;
+    let qtInteira = 0;
+    let qtMeia = 0;
     const connectIngressos: { id: number }[] = [];
     const connectLanches: { id: number }[] = [];
 
@@ -18,13 +20,23 @@ export class PedidosService {
       });
 
       if (ingressos.length !== createPedidoDto.ingressoIds.length) {
-        throw new NotFoundException('Um ou mais ingressos informados não foram encontrados.');
+        throw new NotFoundException('Um ou mais ingressos não encontrados.');
       }
 
-      ingressos.forEach((ingresso) => {
+      for (const ingresso of ingressos) {
+        if (ingresso.pedidoId) {
+          throw new BadRequestException(`O ingresso #${ingresso.id} já foi vendido.`);
+        }
+
         valorTotal += ingresso.valorPago;
         connectIngressos.push({ id: ingresso.id });
-      });
+
+        if (ingresso.tipo.toLowerCase() === 'meia') {
+          qtMeia++;
+        } else {
+          qtInteira++;
+        }
+      }
     }
 
     if (createPedidoDto.lancheComboIds && createPedidoDto.lancheComboIds.length > 0) {
@@ -33,28 +45,40 @@ export class PedidosService {
       });
 
       if (lanches.length !== createPedidoDto.lancheComboIds.length) {
-        throw new NotFoundException('Um ou mais lanches/combos informados não foram encontrados.');
+        throw new NotFoundException('Um ou mais lanches não encontrados.');
       }
 
-      lanches.forEach((lanche) => {
-        valorTotal += lanche.preco;
-        connectLanches.push({ id: lanche.id });
-      });
-    }
+      for (const lanche of lanches) {
+        if (lanche.qtUnidade <= 0) {
+          throw new BadRequestException(`O lanche '${lanche.nome}' está sem estoque.`);
+        }
 
-    if (valorTotal === 0) {
-      throw new BadRequestException('O pedido deve conter pelo menos um ingresso ou lanche/combo.');
+        valorTotal += lanche.valorUnitario;
+        connectLanches.push({ id: lanche.id });
+
+        const novaQtd = lanche.qtUnidade - 1;
+
+        await this.prisma.lancheCombo.update({
+          where: { id: lanche.id },
+          data: {
+            qtUnidade: novaQtd,
+            subtotal: novaQtd * lanche.valorUnitario,
+          },
+        });
+      }
     }
 
     return this.prisma.pedido.create({
       data: {
         valorTotal,
-        ingressos: { connect: connectIngressos },
-        lanches: { connect: connectLanches },
-      },
-      include: {
-        ingressos: true,
-        lanches: true,
+        qtInteira,
+        qtMeia,
+        ingressos: {
+          connect: connectIngressos,
+        },
+        lanches: {
+          connect: connectLanches,
+        },
       },
     });
   }
@@ -84,14 +108,112 @@ export class PedidosService {
     return pedido;
   }
 
-  update(id: number, updatePedidoDto: UpdatePedidoDto) {
-    throw new BadRequestException('A atualização direta de pedidos não é permitida. Crie um novo pedido ou cancele o atual.');
+  async update(id: number, updatePedidoDto: UpdatePedidoDto) {
+    await this.findOne(id);
+    return this.prisma.pedido.update({
+      where: { id },
+      data: updatePedidoDto,
+    });
   }
 
   async remove(id: number) {
     await this.findOne(id);
     return this.prisma.pedido.delete({
       where: { id },
+    });
+  }
+
+  async adicionarLanche(pedidoId: number, lancheId: number) {
+    const pedido = await this.findOne(pedidoId);
+    const lanche = await this.prisma.lancheCombo.findUnique({ where: { id: lancheId } });
+    
+    if (!lanche) throw new NotFoundException('Lanche não encontrado.');
+    if (lanche.qtUnidade <= 0) throw new BadRequestException('Lanche sem estoque.');
+
+    await this.prisma.lancheCombo.update({
+      where: { id: lancheId },
+      data: { 
+        qtUnidade: lanche.qtUnidade - 1, 
+        subtotal: (lanche.qtUnidade - 1) * lanche.valorUnitario 
+      }
+    });
+
+    return this.prisma.pedido.update({
+      where: { id: pedidoId },
+      data: {
+        valorTotal: pedido.valorTotal + lanche.valorUnitario,
+        lanches: { connect: { id: lancheId } }
+      },
+      include: { ingressos: true, lanches: true }
+    });
+  }
+
+  async removerLanche(pedidoId: number, lancheId: number) {
+    const pedido = await this.findOne(pedidoId);
+    const lanche = await this.prisma.lancheCombo.findUnique({ where: { id: lancheId } });
+    
+    if (!lanche) throw new NotFoundException('Lanche não encontrado.');
+
+    await this.prisma.lancheCombo.update({
+      where: { id: lancheId },
+      data: { 
+        qtUnidade: lanche.qtUnidade + 1, 
+        subtotal: (lanche.qtUnidade + 1) * lanche.valorUnitario 
+      }
+    });
+
+    return this.prisma.pedido.update({
+      where: { id: pedidoId },
+      data: {
+        valorTotal: pedido.valorTotal - lanche.valorUnitario,
+        lanches: { disconnect: { id: lancheId } }
+      },
+      include: { ingressos: true, lanches: true }
+    });
+  }
+
+  async adicionarIngresso(pedidoId: number, ingressoId: number) {
+    const pedido = await this.findOne(pedidoId);
+    const ingresso = await this.prisma.ingresso.findUnique({ where: { id: ingressoId } });
+    
+    if (!ingresso) throw new NotFoundException('Ingresso não encontrado.');
+    if (ingresso.pedidoId) throw new BadRequestException('Ingresso já está em um pedido.');
+
+    const isMeia = ingresso.tipo.toLowerCase() === 'meia';
+
+    return this.prisma.pedido.update({
+      where: { id: pedidoId },
+      data: {
+        valorTotal: pedido.valorTotal + ingresso.valorPago,
+        qtInteira: isMeia ? pedido.qtInteira : pedido.qtInteira + 1,
+        qtMeia: isMeia ? pedido.qtMeia + 1 : pedido.qtMeia,
+        ingressos: { connect: { id: ingressoId } }
+      },
+      include: { ingressos: true, lanches: true }
+    });
+  }
+
+  async removerIngresso(pedidoId: number, ingressoId: number) {
+    const pedido = await this.findOne(pedidoId);
+    const ingresso = await this.prisma.ingresso.findUnique({ where: { id: ingressoId } });
+    
+    if (!ingresso) throw new NotFoundException('Ingresso não encontrado.');
+
+    const isMeia = ingresso.tipo.toLowerCase().trim() === 'meia';
+
+    await this.prisma.ingresso.update({
+      where: { id: ingressoId },
+      data: { pedidoId: null }
+    });
+
+    return this.prisma.pedido.update({
+      where: { id: pedidoId },
+      data: {
+        valorTotal: Math.max(0, pedido.valorTotal - ingresso.valorPago),
+        qtInteira: Math.max(0, isMeia ? pedido.qtInteira : pedido.qtInteira - 1),
+        qtMeia: Math.max(0, isMeia ? pedido.qtMeia - 1 : pedido.qtMeia),
+      },
+      include: { ingressos: true, lanches: true }
     });
   }
 }

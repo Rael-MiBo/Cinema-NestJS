@@ -23,19 +23,24 @@ model Genero {
 }
 
 model Filme {
-  id                  Int      @id @default(autoincrement())
-  titulo              String
-  duracao             Int
-  classificacaoEtaria String
-  generoId            Int
-  genero              Genero   @relation(fields: [generoId], references: [id])
-  sessoes             Sessao[]
+  id                 Int      @id @default(autoincrement())
+  titulo             String
+  sinopse            String?
+  classificacao      String
+  duracao            Int
+  elenco             String?
+  dataIniciaExibicao DateTime
+  dataFinalExibicao  DateTime
+  generoId           Int
+  genero             Genero   @relation(fields: [generoId], references: [id])
+  sessoes            Sessao[]
 }
 
 model Sala {
   id         Int      @id @default(autoincrement())
-  numero     String   @unique
+  numero     String
   capacidade Int
+  poltronas  Json     @default("[]")
   sessoes    Sessao[]
 }
 
@@ -51,28 +56,33 @@ model Sessao {
 }
 
 model Ingresso {
-  id         Int     @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   tipo       String
   valorPago  Float
   sessaoId   Int
-  sessao     Sessao  @relation(fields: [sessaoId], references: [id])
+  sessao     Sessao   @relation(fields: [sessaoId], references: [id])
   pedidoId   Int?
-  pedido     Pedido? @relation(fields: [pedidoId], references: [id])
+  pedido     Pedido?  @relation(fields: [pedidoId], references: [id])
+  fila       Int      @default(0)
+  assento    Int      @default(0)
 }
 
 model LancheCombo {
-  id        Int      @id @default(autoincrement())
-  nome      String
-  descricao String?
-  preco     Float
-  itens     String?
-  pedidos   Pedido[]
+  id            Int       @id @default(autoincrement())
+  nome          String
+  descricao     String?
+  valorUnitario Float     @default(0)
+  qtUnidade     Int       @default(0)
+  subtotal      Float     @default(0)
+  pedidos       Pedido[]
 }
 
 model Pedido {
   id         Int           @id @default(autoincrement())
-  valorTotal Float         @default(0)
   dataHora   DateTime      @default(now())
+  valorTotal Float
+  qtInteira  Int           @default(0)
+  qtMeia     Int           @default(0)
   ingressos  Ingresso[]
   lanches    LancheCombo[]
 }

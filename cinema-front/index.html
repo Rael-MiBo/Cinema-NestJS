@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineNest - Catálogo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #e50914;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        h1 {
+            margin: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        #movies-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .movie-card {
+            background-color: #1e1e1e;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        .movie-card:hover {
+            transform: translateY(-5px);
+        }
+        .movie-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #e50914;
+        }
+        .movie-info {
+            font-size: 0.9em;
+            color: #b3b3b3;
+            margin-bottom: 5px;
+        }
+        .error-message {
+            color: #ff4d4d;
+            text-align: center;
+            font-size: 1.2em;
+            grid-column: 1 / -1;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>CineNest - Catálogo de Filmes</h1>
+    </header>
+    <div class="container">
+        <div id="movies-grid"></div>
+    </div>
+
+    <script>
+        const apiUrl = 'http://localhost:3000/filmes';
+        const moviesGrid = document.getElementById('movies-grid');
+
+        async function fetchMovies() {
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error('Falha na resposta da API');
+                }
+                const filmes = await response.json();
+                displayMovies(filmes);
+            } catch (error) {
+                moviesGrid.innerHTML = `<p class="error-message">Erro ao carregar os filmes. Verifique se a sua API NestJS está rodando e se o CORS foi ativado.</p>`;
+            }
+        }
+
+        function displayMovies(filmes) {
+            if (filmes.length === 0) {
+                moviesGrid.innerHTML = '<p>Nenhum filme cadastrado ainda.</p>';
+                return;
+            }
+
+            filmes.forEach(filme => {
+                const card = document.createElement('div');
+                card.className = 'movie-card';
+
+                const title = document.createElement('div');
+                title.className = 'movie-title';
+                title.textContent = filme.titulo;
+
+                const duration = document.createElement('div');
+                duration.className = 'movie-info';
+                duration.textContent = `Duração: ${filme.duracao} min`;
+
+                const rating = document.createElement('div');
+                rating.className = 'movie-info';
+                rating.textContent = `Classificação: ${filme.classificacaoEtaria}`;
+
+                const genre = document.createElement('div');
+                genre.className = 'movie-info';
+                genre.textContent = `Gênero: ${filme.genero ? filme.genero.nome : 'Não informado'}`;
+
+                card.appendChild(title);
+                card.appendChild(duration);
+                card.appendChild(rating);
+                card.appendChild(genre);
+
+                moviesGrid.appendChild(card);
+            });
+        }
+
+        fetchMovies();
+    </script>
+</body>
+</html>

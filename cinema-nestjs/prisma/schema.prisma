@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,11 +8,71 @@ datasource db {
 }
 
 model User {
-  id Int @id @default(autoincrement())
-  email String @unique
-  name String?
-  password String
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  password  String
   createdAt DateTime @default(now())
-  updateAt DateTime @updatedAt()
+  updateAt  DateTime @updatedAt
+}
 
+model Genero {
+  id     Int     @id @default(autoincrement())
+  nome   String  @unique
+  filmes Filme[]
+}
+
+model Filme {
+  id                  Int      @id @default(autoincrement())
+  titulo              String
+  duracao             Int
+  classificacaoEtaria String
+  generoId            Int
+  genero              Genero   @relation(fields: [generoId], references: [id])
+  sessoes             Sessao[]
+}
+
+model Sala {
+  id         Int      @id @default(autoincrement())
+  numero     String   @unique
+  capacidade Int
+  sessoes    Sessao[]
+}
+
+model Sessao {
+  id             Int        @id @default(autoincrement())
+  data           DateTime
+  valorIngresso  Float
+  filmeId        Int
+  salaId         Int
+  filme          Filme      @relation(fields: [filmeId], references: [id])
+  sala           Sala       @relation(fields: [salaId], references: [id])
+  ingressos      Ingresso[]
+}
+
+model Ingresso {
+  id         Int     @id @default(autoincrement())
+  tipo       String
+  valorPago  Float
+  sessaoId   Int
+  sessao     Sessao  @relation(fields: [sessaoId], references: [id])
+  pedidoId   Int?
+  pedido     Pedido? @relation(fields: [pedidoId], references: [id])
+}
+
+model LancheCombo {
+  id        Int      @id @default(autoincrement())
+  nome      String
+  descricao String?
+  preco     Float
+  itens     String?
+  pedidos   Pedido[]
+}
+
+model Pedido {
+  id         Int           @id @default(autoincrement())
+  valorTotal Float         @default(0)
+  dataHora   DateTime      @default(now())
+  ingressos  Ingresso[]
+  lanches    LancheCombo[]
 }

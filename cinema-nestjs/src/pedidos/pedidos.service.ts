@@ -117,9 +117,14 @@ export class PedidosService {
   }
 
   async remove(id: number) {
-    await this.findOne(id);
+    const pedido = await this.findOne(id);
+
+    await this.prisma.ingresso.deleteMany({
+      where: { pedidoId: id }
+    });
+
     return this.prisma.pedido.delete({
-      where: { id },
+      where: { id }
     });
   }
 
@@ -201,9 +206,8 @@ export class PedidosService {
 
     const isMeia = ingresso.tipo.toLowerCase().trim() === 'meia';
 
-    await this.prisma.ingresso.update({
-      where: { id: ingressoId },
-      data: { pedidoId: null }
+    await this.prisma.ingresso.delete({
+      where: { id: ingressoId }
     });
 
     return this.prisma.pedido.update({

@@ -1,4 +1,9 @@
-import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateIngressoDto } from './dto/create-ingresso.dto';
 import { UpdateIngressoDto } from './dto/update-ingresso.dto';
@@ -8,8 +13,10 @@ export class IngressosService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createIngressoDto: CreateIngressoDto) {
+    const { sessaoId, fila, assento, tipo } = createIngressoDto;
+
     const sessao = await this.prisma.sessao.findUnique({
-      where: { id: createIngressoDto.sessaoId },
+      where: { id: sessaoId },
       include: { sala: true },
     });
 
@@ -18,37 +25,36 @@ export class IngressosService {
     }
 
     const mapaPoltronas = sessao.sala.poltronas as number[][];
-    const { fila, assento } = createIngressoDto;
 
     if (!mapaPoltronas[fila] || mapaPoltronas[fila][assento] !== 1) {
       throw new BadRequestException('Esta poltrona não existe na sala.');
     }
 
-    const ingressoExistente = await this.prisma.ingresso.findFirst({
+    const ocupado = await this.prisma.ingresso.findFirst({
       where: {
-        sessaoId: createIngressoDto.sessaoId,
-        fila: fila,
-        assento: assento,
+        sessaoId,
+        fila,
+        assento,
       },
     });
 
-    if (ingressoExistente) {
-      throw new ConflictException('Esta poltrona já está reservada para esta sessão.');
+    if (ocupado) {
+      throw new ConflictException('Esta poltrona já foi selecionada para esta sessão.');
     }
 
     let valorFinal = sessao.valorIngresso;
 
-    if (createIngressoDto.tipo.toLowerCase() === 'meia') {
+    if (tipo.toLowerCase().trim() === 'meia') {
       valorFinal = sessao.valorIngresso / 2;
     }
 
     return this.prisma.ingresso.create({
       data: {
-        tipo: createIngressoDto.tipo,
+        tipo,
         valorPago: valorFinal,
-        sessaoId: createIngressoDto.sessaoId,
-        fila: fila,
-        assento: assento,
+        sessaoId,
+        fila,
+        assento,
       },
     });
   }

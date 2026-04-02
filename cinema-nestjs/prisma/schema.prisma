@@ -68,21 +68,30 @@ model Ingresso {
 }
 
 model LancheCombo {
-  id            Int       @id @default(autoincrement())
+  id            Int                @id @default(autoincrement())
   nome          String
   descricao     String?
-  valorUnitario Float     @default(0)
-  qtUnidade     Int       @default(0)
-  subtotal      Float     @default(0)
-  pedidos       Pedido[]
+  valorUnitario Float              @default(0)
+  qtUnidade     Int                @default(0)
+  subtotal      Float              @default(0)
+  pedidos       ItemPedidoLanche[]
 }
 
 model Pedido {
-  id         Int           @id @default(autoincrement())
-  dataHora   DateTime      @default(now())
+  id         Int                @id @default(autoincrement())
+  dataHora   DateTime           @default(now())
   valorTotal Float
-  qtInteira  Int           @default(0)
-  qtMeia     Int           @default(0)
+  qtInteira  Int                @default(0)
+  qtMeia     Int                @default(0)
   ingressos  Ingresso[]
-  lanches    LancheCombo[]
+  lanches    ItemPedidoLanche[]
+}
+
+model ItemPedidoLanche {
+  id         Int         @id @default(autoincrement())
+  quantidade Int         @default(1)
+  pedidoId   Int
+  pedido     Pedido      @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  lancheId   Int
+  lanche     LancheCombo @relation(fields: [lancheId], references: [id])
 }

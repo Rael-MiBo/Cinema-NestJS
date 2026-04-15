@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, SetMetadata } from '@nestjs/common';
 import { PedidosService } from './pedidos.service';
 import { CreatePedidoDto } from './dto/create-pedido.dto';
 import { UpdatePedidoDto } from './dto/update-pedido.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { RolesGuard } from '../auth/roles.guard';
 
 @Controller('pedidos')
 export class PedidosController {
@@ -30,6 +32,13 @@ export class PedidosController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.pedidosService.remove(+id);
+  }
+
+  @Patch(':id/reembolsar')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @SetMetadata('roles', ['ADMIN'])
+  reembolsar(@Param('id') id: string) {
+    return this.pedidosService.reembolsar(+id);
   }
 
   @Post(':id/lanches/:lancheId')

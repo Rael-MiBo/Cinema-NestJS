@@ -160,4 +160,22 @@ export class PedidosService {
     await this.prisma.ingresso.deleteMany({ where: { pedidoId: id } });
     return this.prisma.pedido.delete({ where: { id } });
   }
+
+  async reembolsar(id: number) {
+  const pedido = await this.prisma.pedido.findUnique({
+    where: { id }
+  });
+
+  if (!pedido) throw new NotFoundException('Pedido não encontrado');
+
+  return this.prisma.pedido.update({
+    where: { id },
+    data: {
+      status: 'REEMBOLSADO',
+      valorTotal: 0,
+      qtInteira: 0,
+      qtMeia: 0
+    },
+  });
+}
 }

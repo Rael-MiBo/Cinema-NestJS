@@ -11,6 +11,8 @@ import { SessoesModule } from './sessoes/sessoes.module';
 import { IngressosModule } from './ingressos/ingressos.module';
 import { LanchesCombosModule } from './lanches-combo/lanches-combos.module';
 import { PedidosModule } from './pedidos/pedidos.module';
+import { AuthModule } from './auth/auth.module';
+import { ProfileModule } from './profile/profile.module';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { PedidosModule } from './pedidos/pedidos.module';
     IngressosModule,
     LanchesCombosModule,
     PedidosModule,
+    AuthModule,
+    ProfileModule,
   ],
   controllers: [AppController],
   providers: [AppService],

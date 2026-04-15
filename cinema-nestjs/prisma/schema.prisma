@@ -10,10 +10,28 @@ datasource db {
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
-  name      String?
   password  String
-  createdAt DateTime @default(now())
-  updateAt  DateTime @updatedAt
+  name      String
+  profile   Profile  @relation(fields: [profileId], references: [id])
+  profileId Int
+  address   Address?
+}
+
+model Profile {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  users User[]
+}
+
+model Address {
+  id      Int    @id @default(autoincrement())
+  street  String
+  number  Int
+  city    String
+  state   String
+  zipCode String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId  Int    @unique
 }
 
 model Genero {
@@ -78,13 +96,14 @@ model LancheCombo {
 }
 
 model Pedido {
-  id         Int                @id @default(autoincrement())
-  dataHora   DateTime           @default(now())
+  id        Int                @id @default(autoincrement())
+  dataHora  DateTime           @default(now())
   valorTotal Float
-  qtInteira  Int                @default(0)
-  qtMeia     Int                @default(0)
-  ingressos  Ingresso[]
-  lanches    ItemPedidoLanche[]
+  status    String             @default("CONCLUIDO")
+  qtInteira Int                @default(0)
+  qtMeia    Int                @default(0)
+  ingressos Ingresso[]
+  lanches   ItemPedidoLanche[]
 }
 
 model ItemPedidoLanche {

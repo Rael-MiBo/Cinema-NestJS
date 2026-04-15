@@ -4,7 +4,7 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-@ApiTags('users') // Agrupa os endpoints sob a tag 'users'
+@ApiTags('users')
 @Controller('users')
 export class UsersController {
  constructor(private readonly usersService: UsersService) {}

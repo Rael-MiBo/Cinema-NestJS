@@ -10,399 +10,543 @@
     />
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="stylesheet" href="style.css" />
+    <style>
+      .login-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #111827;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      }
+      .login-box {
+        background: #1f2937;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        width: 100%;
+        max-width: 400px;
+        border: 1px solid #374151;
+        color: #f3f4f6;
+      }
+      .login-box h2 {
+        margin-bottom: 20px;
+        text-align: center;
+      }
+      .login-box .form-group {
+        margin-bottom: 15px;
+      }
+      .login-box label {
+        display: block;
+        margin-bottom: 5px;
+      }
+      .login-box input {
+        width: 100%;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #4b5563;
+        background: #374151;
+        color: white;
+      }
+      .login-box button {
+        width: 100%;
+        padding: 12px;
+        background: #e50914;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      #app-content {
+        display: none;
+        width: 100%;
+        height: 100vh;
+      }
+    </style>
   </head>
   <body>
-    <aside class="sidebar-nav">
-      <div class="brand">
-        <i class="ph-fill ph-popcorn"></i> Cine<span>Nest</span>
-      </div>
-      <div class="nav-links">
-        <button class="nav-btn active" onclick="openTab('tab-dashboard')">
-          <i class="ph ph-squares-four"></i> Visão Geral
-        </button>
-        <button class="nav-btn" onclick="openTab('tab-catalogo')">
-          <i class="ph ph-film-strip"></i> Catálogo
-        </button>
-        <button class="nav-btn" onclick="openTab('tab-infra')">
-          <i class="ph ph-armchair"></i> Infraestrutura
-        </button>
-        <button class="nav-btn" onclick="openTab('tab-vendas')">
-          <i class="ph ph-shopping-cart"></i> PDV / Vendas
-        </button>
-        <button class="nav-btn" onclick="openTab('tab-gerenciar')">
-          <i class="ph ph-receipt"></i> Gerenciar Pedidos
+    <div id="login-screen" class="login-overlay">
+      <div class="login-box">
+        <div class="brand" style="margin-bottom: 20px; text-align: center; font-size: 2rem; color: #f3f4f6; font-family: 'Inter', sans-serif; font-weight: 700;">
+          <i class="ph-fill ph-popcorn" style="color: #e50914;"></i> Cine<span style="color: #e50914;">Nest</span>
+        </div>
+        <h2>Acesso ao Sistema</h2>
+        <div class="form-group">
+          <label>E-mail</label>
+          <input type="email" id="login-email" placeholder="seu@email.com" />
+        </div>
+        <div class="form-group">
+          <label>Senha</label>
+          <input type="password" id="login-senha" placeholder="******" />
+        </div>
+        <button onclick="fazerLogin()">
+          <i class="ph ph-sign-in"></i> Entrar
         </button>
       </div>
-    </aside>
+    </div>
 
-    <main class="main-content">
-      <div id="tab-dashboard" class="tab-content active">
-        <div class="page-header">
-          <h1>Visão Geral</h1>
-          <p>Resumo das atividades do cinema</p>
+    <div id="app-content">
+      <aside class="sidebar-nav">
+        <div class="brand">
+          <i class="ph-fill ph-popcorn"></i> Cine<span>Nest</span>
         </div>
+        <div class="nav-links">
+          <button class="nav-btn active" onclick="openTab('tab-dashboard')">
+            <i class="ph ph-squares-four"></i> Visão Geral
+          </button>
+          <button class="nav-btn" onclick="openTab('tab-catalogo')">
+            <i class="ph ph-film-strip"></i> Catálogo
+          </button>
+          <button class="nav-btn" onclick="openTab('tab-infra')">
+            <i class="ph ph-armchair"></i> Infraestrutura
+          </button>
+          <button class="nav-btn" onclick="openTab('tab-vendas')">
+            <i class="ph ph-shopping-cart"></i> PDV / Vendas
+          </button>
+          <button class="nav-btn" onclick="openTab('tab-gerenciar')">
+            <i class="ph ph-receipt"></i> Gerenciar Pedidos
+          </button>
+          <button class="nav-btn" onclick="logout()" style="margin-top: auto; color: #ef4444;">
+            <i class="ph ph-sign-out"></i> Sair
+          </button>
+        </div>
+      </aside>
 
-        <div class="dashboard-stats">
-          <div class="stat-card">
-            <div class="stat-icon">
-              <i class="ph-fill ph-currency-dollar"></i>
+      <main class="main-content">
+        <div id="tab-dashboard" class="tab-content active">
+          <div class="page-header">
+            <h1>Visão Geral</h1>
+            <p>Resumo das atividades do cinema</p>
+          </div>
+
+          <div class="dashboard-stats">
+            <div class="stat-card">
+              <div class="stat-icon">
+                <i class="ph-fill ph-currency-dollar"></i>
+              </div>
+              <div class="stat-info">
+                <h3>Receita Total</h3>
+                <p id="dash-receita">R$ 0,00</p>
+              </div>
             </div>
-            <div class="stat-info">
-              <h3>Receita Total</h3>
-              <p id="dash-receita">R$ 0,00</p>
+            <div class="stat-card">
+              <div class="stat-icon"><i class="ph-fill ph-ticket"></i></div>
+              <div class="stat-info">
+                <h3>Pedidos Realizados</h3>
+                <p id="dash-pedidos">0</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon"><i class="ph-fill ph-film-strip"></i></div>
+              <div class="stat-info">
+                <h3>Filmes em Cartaz</h3>
+                <p id="dash-filmes">0</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon"><i class="ph-fill ph-video-camera"></i></div>
+              <div class="stat-info">
+                <h3>Sessões Agendadas</h3>
+                <p id="dash-sessoes">0</p>
+              </div>
             </div>
           </div>
-          <div class="stat-card">
-            <div class="stat-icon"><i class="ph-fill ph-ticket"></i></div>
-            <div class="stat-info">
-              <h3>Pedidos Realizados</h3>
-              <p id="dash-pedidos">0</p>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon"><i class="ph-fill ph-film-strip"></i></div>
-            <div class="stat-info">
-              <h3>Filmes em Cartaz</h3>
-              <p id="dash-filmes">0</p>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon"><i class="ph-fill ph-video-camera"></i></div>
-            <div class="stat-info">
-              <h3>Sessões Agendadas</h3>
-              <p id="dash-sessoes">0</p>
-            </div>
+
+          <div class="panel">
+            <h2>
+              <i class="ph ph-clock-counter-clockwise"></i> Pedidos Recentes
+            </h2>
+            <ul id="dash-pedidos-recentes"></ul>
           </div>
         </div>
 
-        <div class="panel">
-          <h2>
-            <i class="ph ph-clock-counter-clockwise"></i> Pedidos Recentes
-          </h2>
-          <ul id="dash-pedidos-recentes"></ul>
-        </div>
-      </div>
-
-      <div id="tab-catalogo" class="tab-content">
-        <div class="page-header">
-          <h1>Catálogo</h1>
-          <p>Gerenciamento de filmes e gêneros</p>
-        </div>
-        <div class="grid-layout">
-          <aside class="panel">
-            <h2><i class="ph ph-tag"></i> Novo Gênero</h2>
-            <form id="form-genero">
-              <div class="form-group">
-                <label>Nome do Gênero</label
-                ><input type="text" id="genero-nome" required />
-              </div>
-              <button type="submit">
-                <i class="ph ph-check-circle"></i> Salvar Gênero
-              </button>
-            </form>
-            <div class="divider"></div>
-            <h2><i class="ph ph-film-strip"></i> Novo Filme</h2>
-            <form id="form-filme">
-              <div class="form-group">
-                <label>Título</label
-                ><input type="text" id="filme-titulo" required />
-              </div>
-              <div class="form-group">
-                <label>Sinopse</label><input type="text" id="filme-sinopse" />
-              </div>
-              <div class="form-group">
-                <label>Elenco</label><input type="text" id="filme-elenco" />
-              </div>
-              <div
-                style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px"
-              >
+        <div id="tab-catalogo" class="tab-content">
+          <div class="page-header">
+            <h1>Catálogo</h1>
+            <p>Gerenciamento de filmes e gêneros</p>
+          </div>
+          <div class="grid-layout">
+            <aside class="panel">
+              <h2><i class="ph ph-tag"></i> Novo Gênero</h2>
+              <form id="form-genero">
                 <div class="form-group">
-                  <label>Duração (min)</label
-                  ><input type="number" id="filme-duracao" required />
+                  <label>Nome do Gênero</label
+                  ><input type="text" id="genero-nome" required />
+                </div>
+                <button type="submit">
+                  <i class="ph ph-check-circle"></i> Salvar Gênero
+                </button>
+              </form>
+              <div class="divider"></div>
+              <h2><i class="ph ph-film-strip"></i> Novo Filme</h2>
+              <form id="form-filme">
+                <div class="form-group">
+                  <label>Título</label
+                  ><input type="text" id="filme-titulo" required />
                 </div>
                 <div class="form-group">
-                  <label>Classificação</label>
-                  <select id="filme-class" required>
-                    <option value="L">L</option>
-                    <option value="+10">+10</option>
-                    <option value="+14">+14</option>
-                    <option value="16">16</option>
-                    <option value="+18">+18</option>
+                  <label>Sinopse</label><input type="text" id="filme-sinopse" />
+                </div>
+                <div class="form-group">
+                  <label>Elenco</label><input type="text" id="filme-elenco" />
+                </div>
+                <div
+                  style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px"
+                >
+                  <div class="form-group">
+                    <label>Duração (min)</label
+                    ><input type="number" id="filme-duracao" required />
+                  </div>
+                  <div class="form-group">
+                    <label>Classificação</label>
+                    <select id="filme-class" required>
+                      <option value="L">L</option>
+                      <option value="+10">+10</option>
+                      <option value="+14">+14</option>
+                      <option value="16">16</option>
+                      <option value="+18">+18</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Início da Exibição</label
+                  ><input type="date" id="filme-inicio" required />
+                </div>
+                <div class="form-group">
+                  <label>Fim da Exibição</label
+                  ><input type="date" id="filme-fim" required />
+                </div>
+                <div class="form-group">
+                  <label>Gênero</label
+                  ><select id="filme-genero" required></select>
+                </div>
+                <button type="submit">
+                  <i class="ph ph-plus-circle"></i> Cadastrar Filme
+                </button>
+              </form>
+            </aside>
+            <div
+              class="panel"
+              style="
+                background: transparent;
+                border: none;
+                box-shadow: none;
+                padding: 0;
+              "
+            >
+              <div id="filmes-grid" class="grid-cards"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-infra" class="tab-content">
+          <div class="page-header">
+            <h1>Infraestrutura</h1>
+            <p>Configuração de salas, sessões e lanchonete</p>
+          </div>
+          <div class="grid-layout">
+            <aside class="panel">
+              <h2><i class="ph ph-armchair"></i> Nova Sala</h2>
+              <form id="form-sala">
+                <div class="form-group">
+                  <label>Número da Sala</label
+                  ><input type="text" id="sala-numero" required />
+                </div>
+                <div
+                  style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px"
+                >
+                  <div class="form-group">
+                    <label>Qtd. Filas</label
+                    ><input type="number" id="sala-filas" required min="1" />
+                  </div>
+                  <div class="form-group">
+                    <label>Assentos/Fila</label
+                    ><input type="number" id="sala-assentos" required min="1" />
+                  </div>
+                </div>
+                <button type="submit">
+                  <i class="ph ph-check-circle"></i> Salvar Sala
+                </button>
+              </form>
+              <div class="divider"></div>
+              <h2><i class="ph ph-video-camera"></i> Nova Sessão</h2>
+              <form id="form-sessao">
+                <div class="form-group">
+                  <label>Filme</label
+                  ><select id="sessao-filme" required></select>
+                </div>
+                <div class="form-group">
+                  <label>Sala</label
+                  ><select id="sessao-sala" required></select>
+                </div>
+                <div class="form-group">
+                  <label>Data e Hora</label
+                  ><input type="datetime-local" id="sessao-data" required />
+                </div>
+                <div class="form-group">
+                  <label>Valor Base (R$)</label
+                  ><input type="number" step="0.01" id="sessao-valor" required />
+                </div>
+                <button type="submit">
+                  <i class="ph ph-calendar-plus"></i> Agendar Sessão
+                </button>
+              </form>
+              <div class="divider"></div>
+              <h2><i class="ph ph-popcorn"></i> Novo Lanche/Combo</h2>
+              <form id="form-lanche">
+                <div class="form-group">
+                  <label>Nome</label
+                  ><input type="text" id="lanche-nome" required />
+                </div>
+                <div class="form-group">
+                  <label>Descrição</label><input type="text" id="lanche-desc" />
+                </div>
+                <div
+                  style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px"
+                >
+                  <div class="form-group">
+                    <label>Valor (R$)</label
+                    ><input
+                      type="number"
+                      step="0.01"
+                      id="lanche-valor"
+                      required
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label>Estoque</label
+                    ><input type="number" id="lanche-qtd" required />
+                  </div>
+                </div>
+                <button type="submit">
+                  <i class="ph ph-plus-circle"></i> Salvar Lanche
+                </button>
+              </form>
+            </aside>
+            <div style="display: flex; flex-direction: column; gap: 30px">
+              <div class="panel">
+                <h2><i class="ph ph-door"></i> Salas Cadastradas</h2>
+                <ul id="salas-list"></ul>
+              </div>
+              <div class="panel">
+                <h2><i class="ph ph-ticket"></i> Sessões Agendadas</h2>
+                <ul id="sessoes-list"></ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-vendas" class="tab-content">
+          <div class="page-header">
+            <h1>Ponto de Venda</h1>
+            <p>Geração de ingressos e fechamento de pedidos</p>
+          </div>
+          <div class="grid-layout">
+            <aside class="panel">
+              <h2><i class="ph ph-ticket"></i> Vender Ingresso</h2>
+              <form id="form-ingresso">
+                <div class="form-group">
+                  <label>Sessão</label
+                  ><select id="ingresso-sessao" required></select>
+                </div>
+                <div class="form-group">
+                  <label>Tipo de Ingresso</label>
+                  <select id="ingresso-tipo" required>
+                    <option value="Inteira">Inteira</option>
+                    <option value="Meia">Meia</option>
                   </select>
                 </div>
-              </div>
-              <div class="form-group">
-                <label>Início da Exibição</label
-                ><input type="date" id="filme-inicio" required />
-              </div>
-              <div class="form-group">
-                <label>Fim da Exibição</label
-                ><input type="date" id="filme-fim" required />
-              </div>
-              <div class="form-group">
-                <label>Gênero</label
-                ><select id="filme-genero" required></select>
-              </div>
-              <button type="submit">
-                <i class="ph ph-plus-circle"></i> Cadastrar Filme
-              </button>
-            </form>
-          </aside>
-          <div
-            class="panel"
-            style="
-              background: transparent;
-              border: none;
-              box-shadow: none;
-              padding: 0;
-            "
-          >
-            <div id="filmes-grid" class="grid-cards"></div>
-          </div>
-        </div>
-      </div>
-
-      <div id="tab-infra" class="tab-content">
-        <div class="page-header">
-          <h1>Infraestrutura</h1>
-          <p>Configuração de salas, sessões e lanchonete</p>
-        </div>
-        <div class="grid-layout">
-          <aside class="panel">
-            <h2><i class="ph ph-armchair"></i> Nova Sala</h2>
-            <form id="form-sala">
-              <div class="form-group">
-                <label>Número da Sala</label
-                ><input type="text" id="sala-numero" required />
-              </div>
-              <div
-                style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px"
-              >
-                <div class="form-group">
-                  <label>Qtd. Filas</label
-                  ><input type="number" id="sala-filas" required min="1" />
-                </div>
-                <div class="form-group">
-                  <label>Assentos/Fila</label
-                  ><input type="number" id="sala-assentos" required min="1" />
-                </div>
-              </div>
-              <button type="submit">
-                <i class="ph ph-check-circle"></i> Salvar Sala
-              </button>
-            </form>
-            <div class="divider"></div>
-            <h2><i class="ph ph-video-camera"></i> Nova Sessão</h2>
-            <form id="form-sessao">
-              <div class="form-group">
-                <label>Filme</label
-                ><select id="sessao-filme" required></select>
-              </div>
-              <div class="form-group">
-                <label>Sala</label
-                ><select id="sessao-sala" required></select>
-              </div>
-              <div class="form-group">
-                <label>Data e Hora</label
-                ><input type="datetime-local" id="sessao-data" required />
-              </div>
-              <div class="form-group">
-                <label>Valor Base (R$)</label
-                ><input type="number" step="0.01" id="sessao-valor" required />
-              </div>
-              <button type="submit">
-                <i class="ph ph-calendar-plus"></i> Agendar Sessão
-              </button>
-            </form>
-            <div class="divider"></div>
-            <h2><i class="ph ph-popcorn"></i> Novo Lanche/Combo</h2>
-            <form id="form-lanche">
-              <div class="form-group">
-                <label>Nome</label
-                ><input type="text" id="lanche-nome" required />
-              </div>
-              <div class="form-group">
-                <label>Descrição</label><input type="text" id="lanche-desc" />
-              </div>
-              <div
-                style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px"
-              >
-                <div class="form-group">
-                  <label>Valor (R$)</label
-                  ><input
-                    type="number"
-                    step="0.01"
-                    id="lanche-valor"
-                    required
-                  />
-                </div>
-                <div class="form-group">
-                  <label>Estoque</label
-                  ><input type="number" id="lanche-qtd" required />
-                </div>
-              </div>
-              <button type="submit">
-                <i class="ph ph-plus-circle"></i> Salvar Lanche
-              </button>
-            </form>
-          </aside>
-          <div style="display: flex; flex-direction: column; gap: 30px">
-            <div class="panel">
-              <h2><i class="ph ph-door"></i> Salas Cadastradas</h2>
-              <ul id="salas-list"></ul>
-            </div>
-            <div class="panel">
-              <h2><i class="ph ph-ticket"></i> Sessões Agendadas</h2>
-              <ul id="sessoes-list"></ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div id="tab-vendas" class="tab-content">
-        <div class="page-header">
-          <h1>Ponto de Venda</h1>
-          <p>Geração de ingressos e fechamento de pedidos</p>
-        </div>
-        <div class="grid-layout">
-          <aside class="panel">
-            <h2><i class="ph ph-ticket"></i> Vender Ingresso</h2>
-            <form id="form-ingresso">
-              <div class="form-group">
-                <label>Sessão</label
-                ><select id="ingresso-sessao" required></select>
-              </div>
-              <div class="form-group">
-                <label>Tipo de Ingresso</label>
-                <select id="ingresso-tipo" required>
-                  <option value="Inteira">Inteira</option>
-                  <option value="Meia">Meia</option>
-                </select>
-              </div>
-              <div
-                style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px"
-              >
-                <div class="form-group">
-                  <label>Fila (Ex: 0)</label
-                  ><input type="number" id="ingresso-fila" required min="0" />
-                </div>
-                <div class="form-group">
-                  <label>Assento (Ex: 0)</label
-                  ><input
-                    type="number"
-                    id="ingresso-assento"
-                    required
-                    min="0"
-                  />
-                </div>
-              </div>
-              <button type="submit">
-                <i class="ph ph-printer"></i> Gerar Ingresso
-              </button>
-            </form>
-          </aside>
-          <aside class="panel">
-            <h2><i class="ph ph-shopping-cart"></i> Fechar Pedido</h2>
-            <form id="form-pedido">
-              <div class="form-group">
-                <label>Selecionar Ingressos Pendentes</label>
-                <select id="pedido-ingressos" multiple></select>
-              </div>
-
-              <div class="form-group" style="margin-top: 20px">
-                <label>Adicionar Lanches</label>
                 <div
-                  style="
-                    display: grid;
-                    grid-template-columns: 1fr 80px;
-                    gap: 10px;
-                  "
+                  style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px"
                 >
-                  <select id="pedido-lanche-select"></select>
-                  <input
-                    type="number"
-                    id="pedido-lanche-qtd"
-                    value="1"
-                    min="1"
-                  />
+                  <div class="form-group">
+                    <label>Fila (Ex: 0)</label
+                    ><input type="number" id="ingresso-fila" required min="0" />
+                  </div>
+                  <div class="form-group">
+                    <label>Assento (Ex: 0)</label
+                    ><input
+                      type="number"
+                      id="ingresso-assento"
+                      required
+                      min="0"
+                    />
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onclick="adicionarLancheLista()"
-                  style="background-color: #3b82f6; margin-top: 10px"
-                >
-                  <i class="ph ph-plus"></i> Incluir no Carrinho
+                <button type="submit">
+                  <i class="ph ph-printer"></i> Gerar Ingresso
                 </button>
-                <ul
-                  id="carrinho-lanches"
-                  style="
-                    margin-top: 15px;
-                    font-size: 0.85em;
-                    color: var(--text-muted);
-                    border-top: 1px solid var(--border-color);
-                    padding-top: 10px;
-                  "
-                ></ul>
-              </div>
+              </form>
+            </aside>
+            <aside class="panel">
+              <h2><i class="ph ph-shopping-cart"></i> Fechar Pedido</h2>
+              <form id="form-pedido">
+                <div class="form-group">
+                  <label>Selecionar Ingressos Pendentes</label>
+                  <select id="pedido-ingressos" multiple></select>
+                </div>
 
-              <button
-                type="submit"
-                style="background-color: var(--success); margin-top: 20px"
-              >
-                <i class="ph ph-check-fat"></i> Finalizar Pedido
-              </button>
-            </form>
-          </aside>
-        </div>
-      </div>
+                <div class="form-group" style="margin-top: 20px">
+                  <label>Adicionar Lanches</label>
+                  <div
+                    style="
+                      display: grid;
+                      grid-template-columns: 1fr 80px;
+                      gap: 10px;
+                    "
+                  >
+                    <select id="pedido-lanche-select"></select>
+                    <input
+                      type="number"
+                      id="pedido-lanche-qtd"
+                      value="1"
+                      min="1"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onclick="adicionarLancheLista()"
+                    style="background-color: #e50914; margin-top: 10px"
+                  >
+                    <i class="ph ph-plus"></i> Incluir no Carrinho
+                  </button>
+                  <ul
+                    id="carrinho-lanches"
+                    style="
+                      margin-top: 15px;
+                      font-size: 0.85em;
+                      color: var(--text-muted);
+                      border-top: 1px solid var(--border-color);
+                      padding-top: 10px;
+                    "
+                  ></ul>
+                </div>
 
-      <div id="tab-gerenciar" class="tab-content">
-        <div class="page-header">
-          <h1>Gerenciar Pedidos</h1>
-          <p>Edição e consulta de pedidos finalizados</p>
+                <button
+                  type="submit"
+                  style="background-color: var(--success); margin-top: 20px"
+                >
+                  <i class="ph ph-check-fat"></i> Finalizar Pedido
+                </button>
+              </form>
+            </aside>
+          </div>
         </div>
-        <div class="grid-layout">
-          <aside class="panel">
-            <h2><i class="ph ph-magnifying-glass"></i> Selecionar Pedido</h2>
-            <div class="form-group">
-              <select
-                id="gerenciar-pedido-select"
-                onchange="carregarDetalhesPedido()"
-              ></select>
-            </div>
-            <div id="acoes-pedido" style="display: none">
-              <div class="divider"></div>
-              <h2><i class="ph ph-plus-circle"></i> Adicionar Itens</h2>
+
+        <div id="tab-gerenciar" class="tab-content">
+          <div class="page-header">
+            <h1>Gerenciar Pedidos</h1>
+            <p>Edição e consulta de pedidos finalizados</p>
+          </div>
+          <div class="grid-layout">
+            <aside class="panel">
+              <h2><i class="ph ph-magnifying-glass"></i> Selecionar Pedido</h2>
               <div class="form-group">
-                <label>Ingressos Disponíveis</label>
-                <select id="add-ingresso-select"></select>
-                <button
-                  onclick="adicionarItemPedido('ingressos')"
-                  style="background-color: #3b82f6"
-                >
-                  <i class="ph ph-ticket"></i> Adicionar Ingresso
-                </button>
+                <select
+                  id="gerenciar-pedido-select"
+                  onchange="carregarDetalhesPedido()"
+                ></select>
               </div>
-              <div class="form-group" style="margin-top: 20px">
-                <label>Lanches Disponíveis</label>
-                <select id="add-lanche-select"></select>
-                <button
-                  onclick="adicionarItemPedido('lanches')"
-                  style="background-color: #3b82f6"
-                >
-                  <i class="ph ph-popcorn"></i> Adicionar Lanche
-                </button>
+              <div id="acoes-pedido" style="display: none">
+                <div class="divider"></div>
+                <h2><i class="ph ph-plus-circle"></i> Adicionar Itens</h2>
+                <div class="form-group">
+                  <label>Ingressos Disponíveis</label>
+                  <select id="add-ingresso-select"></select>
+                  <button
+                    onclick="adicionarItemPedido('ingressos')"
+                    style="background-color: #e50914"
+                  >
+                    <i class="ph ph-ticket"></i> Adicionar Ingresso
+                  </button>
+                </div>
+                <div class="form-group" style="margin-top: 20px">
+                  <label>Lanches Disponíveis</label>
+                  <select id="add-lanche-select"></select>
+                  <button
+                    onclick="adicionarItemPedido('lanches')"
+                    style="background-color: #e50914"
+                  >
+                    <i class="ph ph-popcorn"></i> Adicionar Lanche
+                  </button>
+                </div>
               </div>
-            </div>
-          </aside>
-          <main class="panel">
-            <h2><i class="ph ph-receipt"></i> Detalhes do Pedido</h2>
-            <div id="detalhes-pedido-container"></div>
-          </main>
+            </aside>
+            <main class="panel">
+              <h2><i class="ph ph-receipt"></i> Detalhes do Pedido</h2>
+              <div id="detalhes-pedido-container"></div>
+            </main>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
 
     <script src="script.js"></script>
+    <script>
+      async function fazerLogin() {
+        const email = document.getElementById("login-email").value;
+        const password = document.getElementById("login-senha").value;
+        try {
+          const response = await fetch("http://localhost:3000/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+          if (!response.ok) throw new Error("Falha no login");
+          const data = await response.json();
+          localStorage.setItem("token", data.access_token);
+          verificarAcesso();
+        } catch (error) {
+          alert("Credenciais inválidas ou erro na conexão.");
+        }
+      }
+
+      function verificarAcesso() {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          document.getElementById("login-screen").style.display = "flex";
+          document.getElementById("app-content").style.display = "none";
+          return;
+        }
+        try {
+          const payload = JSON.parse(atob(token.split(".")[1]));
+          document.getElementById("login-screen").style.display = "none";
+          document.getElementById("app-content").style.display = "flex";
+          configurarMenuPorCargo(payload.role);
+        } catch (e) {
+          logout();
+        }
+      }
+
+      function configurarMenuPorCargo(role) {
+        const btsAdmin = document.querySelectorAll(".nav-btn");
+        btsAdmin.forEach((btn) => {
+          const clickAttr = btn.getAttribute("onclick");
+          if (role === "USER") {
+            if (
+              clickAttr.includes("tab-catalogo") ||
+              clickAttr.includes("tab-infra") ||
+              clickAttr.includes("tab-gerenciar")
+            ) {
+              btn.style.display = "none";
+            }
+          } else {
+            btn.style.display = "flex";
+          }
+        });
+      }
+
+      function logout() {
+        localStorage.removeItem("token");
+        location.reload();
+      }
+
+      window.addEventListener("load", verificarAcesso);
+    </script>
   </body>
 </html>

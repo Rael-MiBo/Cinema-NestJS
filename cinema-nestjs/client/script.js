@@ -2,6 +2,9 @@ let pedidoAtualId = null;
 let carrinhoLanches = [];
 const API_URL = 'http://localhost:3000';
 
+let assentoSelecionado = null;
+let sessoesCache = [];
+
 function openTab(tabId, btn) {
   document.querySelectorAll('.tab-content').forEach((el) => el.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach((el) => el.classList.remove('active'));
@@ -119,11 +122,7 @@ function adicionarLancheLista() {
   if (itemExistente) {
     itemExistente.quantidade += quantidade;
   } else {
-    carrinhoLanches.push({
-      id: lancheId,
-      nome: lancheNome,
-      quantidade: quantidade,
-    });
+    carrinhoLanches.push({ id: lancheId, nome: lancheNome, quantidade: quantidade });
   }
   renderizarCarrinhoPDV();
   qtdInput.value = 1;
@@ -147,18 +146,157 @@ function renderizarCarrinhoPDV() {
   listaUI.innerHTML = '';
   carrinhoLanches.forEach((item) => {
     const li = document.createElement('li');
-    li.style.display = 'flex';
-    li.style.justifyContent = 'space-between';
-    li.style.alignItems = 'center';
-    li.style.padding = '8px';
-    li.style.background = 'rgba(255,255,255,0.03)';
-    li.style.borderRadius = '6px';
-    li.style.marginBottom = '8px';
+    li.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:8px;background:rgba(255,255,255,0.03);border-radius:6px;margin-bottom:8px;';
     li.innerHTML = `<span><b>${item.quantidade}x</b> ${item.nome}</span>
-            <button type="button" class="btn-small" onclick="removerLancheCarrinho(${item.id})" style="background-color: var(--danger); padding: 2px 8px;"><i class="ph ph-minus"></i></button>`;
+      <button type="button" class="btn-small" onclick="removerLancheCarrinho(${item.id})" style="background-color:var(--danger);padding:2px 8px;"><i class="ph ph-minus"></i></button>`;
     listaUI.appendChild(li);
   });
 }
+
+async function abrirSeletorPoltronas() {
+  const sessaoId = parseInt(document.getElementById('ingresso-sessao').value);
+  if (!sessaoId) return alert('Selecione uma sessão primeiro.');
+
+  const sessao = sessoesCache.find(s => s.id === sessaoId);
+  if (!sessao) return alert('Sessão não encontrada.');
+
+  let ingressosVendidos = [];
+  try {
+    const todos = await request('/ingressos');
+    ingressosVendidos = todos.filter(i => i.sessaoId === sessaoId);
+  } catch (e) {
+    console.error(e);
+  }
+
+  const poltronas = sessao.sala.poltronas;
+  const numFilas = poltronas.length;
+  const numAssentos = numFilas > 0 ? poltronas[0].length : 0;
+
+  const modal = document.getElementById('modal-poltronas');
+  const titulo = document.getElementById('modal-sessao-titulo');
+  const grade = document.getElementById('grade-poltronas');
+
+  titulo.textContent = `${sessao.filme.titulo} — ${new Date(sessao.data).toLocaleString()} | Sala ${sessao.sala.numero}`;
+  grade.innerHTML = '';
+
+  const legenda = document.getElementById('legenda-poltronas');
+  legenda.innerHTML = `
+    <span class="leg-item"><span class="leg-box livre"></span> Livre</span>
+    <span class="leg-item"><span class="leg-box ocupado"></span> Ocupado</span>
+    <span class="leg-item"><span class="leg-box selecionado"></span> Selecionado</span>
+  `;
+
+  const cabecalho = document.createElement('div');
+  cabecalho.className = 'grade-row';
+  cabecalho.appendChild(document.createElement('div'));
+  for (let a = 0; a < numAssentos; a++) {
+    const th = document.createElement('div');
+    th.className = 'grade-col-header';
+    th.textContent = a + 1;
+    cabecalho.appendChild(th);
+  }
+  grade.appendChild(cabecalho);
+
+  const letras = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+  for (let f = 0; f < numFilas; f++) {
+    const row = document.createElement('div');
+    row.className = 'grade-row';
+
+    const rowLabel = document.createElement('div');
+    rowLabel.className = 'grade-row-header';
+    rowLabel.textContent = letras[f] || f;
+    row.appendChild(rowLabel);
+
+    for (let a = 0; a < numAssentos; a++) {
+      const poltrona = poltronas[f][a];
+      const btn = document.createElement('button');
+      btn.type = 'button';
+
+      if (poltrona === 0) {
+        btn.className = 'poltrona vazio';
+        btn.disabled = true;
+      } else {
+        const ocupado = ingressosVendidos.some(i => i.fila === f && i.assento === a);
+        if (ocupado) {
+          btn.className = 'poltrona ocupado';
+          btn.disabled = true;
+          btn.title = `Fila ${letras[f] || f} | Assento ${a + 1} — Ocupado`;
+        } else {
+          btn.className = 'poltrona livre';
+          btn.title = `Fila ${letras[f] || f} | Assento ${a + 1}`;
+          btn.onclick = () => selecionarPoltrona(f, a, btn);
+        }
+      }
+      row.appendChild(btn);
+    }
+    grade.appendChild(row);
+  }
+
+  assentoSelecionado = null;
+  atualizarInfoSelecionado();
+
+  modal.classList.add('aberto');
+}
+
+function selecionarPoltrona(fila, assento, btnEl) {
+  document.querySelectorAll('.poltrona.selecionado').forEach(b => b.classList.replace('selecionado', 'livre'));
+  btnEl.classList.replace('livre', 'selecionado');
+  assentoSelecionado = { fila, assento };
+  atualizarInfoSelecionado();
+}
+
+function atualizarInfoSelecionado() {
+  const info = document.getElementById('info-assento-selecionado');
+  const btnConfirmar = document.getElementById('btn-confirmar-assento');
+  const letras = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  if (assentoSelecionado) {
+    const letraFila = letras[assentoSelecionado.fila] || assentoSelecionado.fila;
+    info.textContent = `Selecionado: Fila ${letraFila} | Assento ${assentoSelecionado.assento + 1}`;
+    info.style.color = 'var(--success)';
+    btnConfirmar.disabled = false;
+  } else {
+    info.textContent = 'Nenhum assento selecionado';
+    info.style.color = 'var(--text-muted)';
+    btnConfirmar.disabled = true;
+  }
+}
+
+function confirmarAssento() {
+  if (!assentoSelecionado) return;
+  document.getElementById('ingresso-fila').value = assentoSelecionado.fila;
+  document.getElementById('ingresso-assento').value = assentoSelecionado.assento;
+
+  const letras = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const letraFila = letras[assentoSelecionado.fila] || assentoSelecionado.fila;
+  const display = document.getElementById('assento-display');
+  display.textContent = `Fila ${letraFila} | Assento ${assentoSelecionado.assento + 1}`;
+  display.style.color = 'var(--success)';
+
+  fecharModal();
+}
+
+function fecharModal() {
+  document.getElementById('modal-poltronas').classList.remove('aberto');
+}
+
+document.addEventListener('click', (e) => {
+  const modal = document.getElementById('modal-poltronas');
+  if (modal && e.target === modal) fecharModal();
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  const selectSessao = document.getElementById('ingresso-sessao');
+  if (selectSessao) {
+    selectSessao.addEventListener('change', () => {
+      assentoSelecionado = null;
+      document.getElementById('ingresso-fila').value = '';
+      document.getElementById('ingresso-assento').value = '';
+      const display = document.getElementById('assento-display');
+      if (display) { display.textContent = 'Nenhum assento selecionado'; display.style.color = 'var(--text-muted)'; }
+    });
+  }
+});
 
 async function carregarDados() {
   try {
@@ -169,6 +307,8 @@ async function carregarDados() {
     const ingressos = await request('/ingressos');
     const lanches = await request('/lanches-combos');
     const pedidos = await request('/pedidos');
+
+    sessoesCache = sessoes;
 
     const pedidosValidos = Array.isArray(pedidos) ? pedidos.filter(p => p.status !== 'REEMBOLSADO') : [];
 
@@ -181,8 +321,8 @@ async function carregarDados() {
 
       const pedidosRecentes = Array.isArray(pedidos) ? [...pedidos].reverse().slice(0, 5) : [];
       document.getElementById('dash-pedidos-recentes').innerHTML = pedidosRecentes.map(p => `
-            <li><span><b>Pedido #${p.id}</b> ${p.status === 'REEMBOLSADO' ? '[REEMBOLSADO]' : ''}</span><span style="color: ${p.status === 'REEMBOLSADO' ? 'var(--danger)' : 'var(--success)'}; font-weight: bold;">R$ ${p.valorTotal.toFixed(2)}</span></li>
-        `).join('') || '<p style="color: var(--text-muted); padding: 10px;">Nenhum pedido recente.</p>';
+        <li><span><b>Pedido #${p.id}</b> ${p.status === 'REEMBOLSADO' ? '[REEMBOLSADO]' : ''}</span><span style="color:${p.status === 'REEMBOLSADO' ? 'var(--danger)' : 'var(--success)'};font-weight:bold;">R$ ${p.valorTotal.toFixed(2)}</span></li>
+      `).join('') || '<p style="color:var(--text-muted);padding:10px;">Nenhum pedido recente.</p>';
     }
 
     popularSelect('filme-genero', generos, 'id', (g) => g.nome);
@@ -192,11 +332,11 @@ async function carregarDados() {
     const filmesGrid = document.getElementById('filmes-grid');
     if (filmesGrid) {
       filmesGrid.innerHTML = filmes.map(f => `
-            <div class="card">
-                <div><div class="card-title">${f.titulo}</div><div class="card-info">${f.duracao} min | ${f.classificacao}</div></div>
-                <button class="btn-small" style="background-color: var(--danger); margin-top: 15px; width: 100%; color: white;" onclick="removerFilme(${f.id})"><i class="ph ph-trash"></i> Remover</button>
-            </div>
-        `).join('');
+        <div class="card">
+          <div><div class="card-title">${f.titulo}</div><div class="card-info">${f.duracao} min | ${f.classificacao}</div></div>
+          <button class="btn-small" style="background-color:var(--danger);margin-top:15px;width:100%;color:white;" onclick="removerFilme(${f.id})"><i class="ph ph-trash"></i> Remover</button>
+        </div>
+      `).join('');
     }
 
     const salasList = document.getElementById('salas-list');
@@ -226,7 +366,7 @@ async function carregarDetalhesPedido(idForcado = null) {
   const container = document.getElementById('detalhes-pedido-container');
   const acoes = document.getElementById('acoes-pedido');
   if (!id) {
-    container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 40px;">Selecione um pedido.</p>';
+    container.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:40px;">Selecione um pedido.</p>';
     acoes.style.display = 'none';
     pedidoAtualId = null;
     return;
@@ -241,13 +381,13 @@ async function carregarDetalhesPedido(idForcado = null) {
     const payload = JSON.parse(atob(token.split(".")[1]));
 
     let html = `
-      <div style="padding: 20px; border: 1px solid var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+      <div style="padding:20px;border:1px solid var(--border-color);border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
         <div>
           <h3>Pedido #${pedido.id} [${pedido.status || 'CONCLUIDO'}]</h3>
-          <p style="font-size: 1.5rem; color: ${pedido.status === 'REEMBOLSADO' ? 'var(--danger)' : 'var(--success)'};">R$ ${pedido.valorTotal.toFixed(2)}</p>
+          <p style="font-size:1.5rem;color:${pedido.status === 'REEMBOLSADO' ? 'var(--danger)' : 'var(--success)'};">R$ ${pedido.valorTotal.toFixed(2)}</p>
         </div>
-        ${pedido.status !== 'REEMBOLSADO' && payload.role === 'ADMIN' ? 
-          `<button onclick="reembolsarPedido(${pedido.id})" style="background-color: var(--danger); width: auto; padding: 10px 20px;"><i class="ph ph-arrow-counter-clockwise"></i> Reembolsar</button>` : ''
+        ${pedido.status !== 'REEMBOLSADO' && payload.role === 'ADMIN' ?
+          `<button onclick="reembolsarPedido(${pedido.id})" style="background-color:var(--danger);width:auto;padding:10px 20px;"><i class="ph ph-arrow-counter-clockwise"></i> Reembolsar</button>` : ''
         }
       </div>`;
 
@@ -365,10 +505,7 @@ document.getElementById('form-sala').onsubmit = async (e) => {
   const assentos = parseInt(document.getElementById('sala-assentos').value);
   const matriz = Array(filas).fill().map(() => Array(assentos).fill(1));
   try {
-    await request('/salas', 'POST', {
-      numero: document.getElementById('sala-numero').value,
-      poltronas: matriz,
-    });
+    await request('/salas', 'POST', { numero: document.getElementById('sala-numero').value, poltronas: matriz });
     e.target.reset();
     carregarDados();
   } catch (err) {
@@ -394,14 +531,24 @@ document.getElementById('form-sessao').onsubmit = async (e) => {
 
 document.getElementById('form-ingresso').onsubmit = async (e) => {
   e.preventDefault();
+  const fila = parseInt(document.getElementById('ingresso-fila').value);
+  const assento = parseInt(document.getElementById('ingresso-assento').value);
+
+  if (isNaN(fila) || isNaN(assento)) {
+    return alert('Selecione um assento usando o mapa da sala.');
+  }
+
   try {
     await request('/ingressos', 'POST', {
       sessaoId: parseInt(document.getElementById('ingresso-sessao').value),
       tipo: document.getElementById('ingresso-tipo').value,
-      fila: parseInt(document.getElementById('ingresso-fila').value),
-      assento: parseInt(document.getElementById('ingresso-assento').value),
+      fila: fila,
+      assento: assento,
     });
     alert('Ingresso gerado!');
+    assentoSelecionado = null;
+    const display = document.getElementById('assento-display');
+    if (display) { display.textContent = 'Nenhum assento selecionado'; display.style.color = 'var(--text-muted)'; }
     e.target.reset();
     carregarDados();
   } catch (err) {
@@ -414,16 +561,11 @@ document.getElementById('form-pedido').onsubmit = async (e) => {
   const ingressos = Array.from(document.getElementById('pedido-ingressos').selectedOptions).map((o) => parseInt(o.value));
   const lancheIdsPlano = [];
   carrinhoLanches.forEach((item) => {
-    for (let i = 0; i < item.quantidade; i++) {
-      lancheIdsPlano.push(item.id);
-    }
+    for (let i = 0; i < item.quantidade; i++) lancheIdsPlano.push(item.id);
   });
   if (ingressos.length === 0 && lancheIdsPlano.length === 0) return alert('Adicione pelo menos um item.');
   try {
-    await request('/pedidos', 'POST', {
-      ingressoIds: ingressos,
-      lancheComboIds: lancheIdsPlano,
-    });
+    await request('/pedidos', 'POST', { ingressoIds: ingressos, lancheComboIds: lancheIdsPlano });
     alert('Pedido finalizado!');
     carrinhoLanches = [];
     renderizarCarrinhoPDV();

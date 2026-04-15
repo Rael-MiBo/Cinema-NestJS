@@ -68,6 +68,232 @@
         height: 100vh;
       }
     </style>
+    <style>
+      #modal-poltronas {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.75);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+      }
+      #modal-poltronas.aberto { display: flex; }
+
+      .modal-box {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 16px;
+        padding: 32px;
+        max-width: 90vw;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+      }
+
+      .modal-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        color: #f8fafc;
+        font-weight: 600;
+      }
+
+      .modal-header p {
+        margin: 4px 0 0;
+        font-size: 0.85rem;
+        color: #94a3b8;
+      }
+
+      .btn-fechar-modal {
+        background: transparent;
+        border: 1px solid #334155;
+        color: #94a3b8;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin: 0;
+        padding: 0;
+      }
+      .btn-fechar-modal:hover { background: #334155; color: #f8fafc; transform: none; box-shadow: none; }
+
+      .tela-cinema {
+        background: linear-gradient(180deg, rgba(229,9,20,0.15) 0%, transparent 100%);
+        border-top: 3px solid #e50914;
+        text-align: center;
+        padding: 8px 0 16px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        color: #94a3b8;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+
+      .grade-poltronas-container {
+        overflow-x: auto;
+        padding-bottom: 4px;
+      }
+
+      .grade-row {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 6px;
+        align-items: center;
+      }
+
+      .grade-row-header {
+        width: 24px;
+        text-align: center;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #94a3b8;
+        flex-shrink: 0;
+      }
+
+      .grade-col-header {
+        width: 34px;
+        height: 20px;
+        text-align: center;
+        font-size: 0.75rem;
+        color: #64748b;
+        flex-shrink: 0;
+      }
+
+      .poltrona {
+        width: 34px;
+        height: 30px;
+        border-radius: 6px 6px 4px 4px;
+        border: none;
+        cursor: pointer;
+        font-size: 0;
+        flex-shrink: 0;
+        transition: transform 0.1s, box-shadow 0.1s;
+        margin: 0;
+        padding: 0;
+        position: relative;
+      }
+
+      .poltrona::before {
+        content: '';
+        position: absolute;
+        top: -5px;
+        left: 4px;
+        right: 4px;
+        height: 5px;
+        border-radius: 3px 3px 0 0;
+      }
+
+      .poltrona.livre {
+        background: #1e4d36;
+        box-shadow: 0 2px 0 #0f2d1f;
+      }
+      .poltrona.livre::before { background: #1e4d36; }
+      .poltrona.livre:hover { background: #27633f; transform: translateY(-2px); box-shadow: 0 4px 0 #0f2d1f; }
+
+      .poltrona.ocupado {
+        background: #4b1e1e;
+        box-shadow: 0 2px 0 #2d0f0f;
+        cursor: not-allowed;
+        opacity: 0.7;
+      }
+      .poltrona.ocupado::before { background: #4b1e1e; }
+
+      .poltrona.selecionado {
+        background: #e50914;
+        box-shadow: 0 2px 0 #a0060e, 0 0 12px rgba(229,9,20,0.5);
+      }
+      .poltrona.selecionado::before { background: #e50914; }
+
+      .poltrona.vazio {
+        background: transparent;
+        box-shadow: none;
+        cursor: default;
+      }
+      .poltrona.vazio::before { display: none; }
+
+      #legenda-poltronas {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      .leg-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.85rem;
+        color: #94a3b8;
+      }
+
+      .leg-box {
+        width: 24px;
+        height: 20px;
+        border-radius: 4px 4px 3px 3px;
+        display: inline-block;
+        position: relative;
+      }
+      .leg-box::before {
+        content: '';
+        position: absolute;
+        top: -4px;
+        left: 3px;
+        right: 3px;
+        height: 4px;
+        border-radius: 2px 2px 0 0;
+      }
+      .leg-box.livre { background: #1e4d36; }
+      .leg-box.livre::before { background: #1e4d36; }
+      .leg-box.ocupado { background: #4b1e1e; opacity: 0.7; }
+      .leg-box.ocupado::before { background: #4b1e1e; }
+      .leg-box.selecionado { background: #e50914; box-shadow: 0 0 8px rgba(229,9,20,0.5); }
+      .leg-box.selecionado::before { background: #e50914; }
+
+      .modal-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid #334155;
+        padding-top: 16px;
+        gap: 16px;
+      }
+
+      #info-assento-selecionado {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #94a3b8;
+      }
+
+      #btn-confirmar-assento {
+        width: auto;
+        padding: 10px 24px;
+        margin: 0;
+      }
+      #btn-confirmar-assento:disabled {
+        background: #334155;
+        color: #64748b;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+    </style>
   </head>
   <body>
     <div id="login-screen" class="login-overlay">
@@ -361,23 +587,26 @@
                     <option value="Meia">Meia</option>
                   </select>
                 </div>
-                <div
-                  style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px"
-                >
-                  <div class="form-group">
-                    <label>Fila (Ex: 0)</label
-                    ><input type="number" id="ingresso-fila" required min="0" />
-                  </div>
-                  <div class="form-group">
-                    <label>Assento (Ex: 0)</label
-                    ><input
-                      type="number"
-                      id="ingresso-assento"
-                      required
-                      min="0"
-                    />
-                  </div>
+                <!-- Campos ocultos preenchidos pelo seletor visual -->
+                <input type="hidden" id="ingresso-fila" />
+                <input type="hidden" id="ingresso-assento" />
+
+                <div class="form-group">
+                  <label>Assento</label>
+                  <div id="assento-display" style="
+                    padding: 10px 12px;
+                    background: var(--bg-input);
+                    border: 1px solid var(--border-color);
+                    border-radius: 6px;
+                    font-size: 0.95em;
+                    color: var(--text-muted);
+                    margin-bottom: 8px;
+                  ">Nenhum assento selecionado</div>
+                  <button type="button" onclick="abrirSeletorPoltronas()" style="background-color: #334155; margin-top: 0;">
+                    <i class="ph ph-armchair"></i> Selecionar Poltrona
+                  </button>
                 </div>
+
                 <button type="submit">
                   <i class="ph ph-printer"></i> Gerar Ingresso
                 </button>
@@ -484,6 +713,35 @@
           </div>
         </div>
       </main>
+    </div>
+
+    <div id="modal-poltronas">
+      <div class="modal-box">
+        <div class="modal-header">
+          <div>
+            <h3><i class="ph ph-armchair" style="color:#e50914;"></i> Selecionar Poltrona</h3>
+            <p id="modal-sessao-titulo"></p>
+          </div>
+          <button class="btn-fechar-modal" onclick="fecharModal()" title="Fechar">
+            <i class="ph ph-x"></i>
+          </button>
+        </div>
+
+        <div class="tela-cinema">▬▬▬▬▬▬▬▬ TELA ▬▬▬▬▬▬▬▬</div>
+
+        <div class="grade-poltronas-container">
+          <div id="grade-poltronas"></div>
+        </div>
+
+        <div id="legenda-poltronas"></div>
+
+        <div class="modal-footer">
+          <span id="info-assento-selecionado">Nenhum assento selecionado</span>
+          <button id="btn-confirmar-assento" onclick="confirmarAssento()" disabled>
+            <i class="ph ph-check-circle"></i> Confirmar
+          </button>
+        </div>
+      </div>
     </div>
 
     <script src="script.js"></script>

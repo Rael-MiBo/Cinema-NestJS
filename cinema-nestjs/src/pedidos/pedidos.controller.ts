@@ -1,13 +1,43 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, SetMetadata } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  SetMetadata,
+  Request,
+} from '@nestjs/common';
 import { PedidosService } from './pedidos.service';
 import { CreatePedidoDto } from './dto/create-pedido.dto';
 import { UpdatePedidoDto } from './dto/update-pedido.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/roles.guard';
+import { CheckoutDto } from './dto/checkout.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('pedidos')
 export class PedidosController {
   constructor(private readonly pedidosService: PedidosService) {}
+
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  @Post('checkout')
+  checkout(
+    @Request() req: { user: { userId: number } },
+    @Body() dto: CheckoutDto,
+  ) {
+    return this.pedidosService.checkout(req.user.userId, dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me')
+  findMine(@Request() req: { user: { userId: number } }) {
+    return this.pedidosService.findByUser(req.user.userId);
+  }
 
   @Post()
   create(@Body() createPedidoDto: CreatePedidoDto) {

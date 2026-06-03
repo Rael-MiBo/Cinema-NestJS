@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { SessoesService } from './sessoes.service';
 import { CreateSessaoDto } from './dto/create-sessao.dto';
 import { UpdateSessaoDto } from './dto/update-sessao.dto';
@@ -13,8 +22,10 @@ export class SessoesController {
   }
 
   @Get()
-  findAll() {
-    return this.sessoesService.findAll();
+  findAll(@Query('filmeId') filmeId?: string) {
+    return this.sessoesService.findAll(
+      filmeId ? Number(filmeId) : undefined,
+    );
   }
 
   @Get(':id')

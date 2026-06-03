@@ -67,13 +67,15 @@ export class SessoesService {
     });
   }
 
-  findAll() {
+  findAll(filmeId?: number) {
     return this.prisma.sessao.findMany({
+      where: filmeId ? { filmeId } : undefined,
       include: {
         filme: true,
         sala: true,
         ingressos: true,
       },
+      orderBy: { data: 'asc' },
     });
   }
 
@@ -83,6 +85,7 @@ export class SessoesService {
       include: {
         filme: true,
         sala: true,
+        ingressos: true,
       },
     });
 

@@ -13,6 +13,7 @@ import { LanchesCombosModule } from './lanches-combo/lanches-combos.module';
 import { PedidosModule } from './pedidos/pedidos.module';
 import { AuthModule } from './auth/auth.module';
 import { ProfileModule } from './profile/profile.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { ProfileModule } from './profile/profile.module';
     PedidosModule,
     AuthModule,
     ProfileModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

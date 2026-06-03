@@ -15,6 +15,15 @@ model User {
   profile   Profile  @relation(fields: [profileId], references: [id])
   profileId Int
   address   Address?
+  pedidos   Pedido[]
+}
+
+model PasswordReset {
+  id        Int      @id @default(autoincrement())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
 
 model Profile {
@@ -96,14 +105,17 @@ model LancheCombo {
 }
 
 model Pedido {
-  id        Int                @id @default(autoincrement())
-  dataHora  DateTime           @default(now())
+  id         Int                @id @default(autoincrement())
+  dataHora   DateTime           @default(now())
   valorTotal Float
-  status    String             @default("CONCLUIDO")
-  qtInteira Int                @default(0)
-  qtMeia    Int                @default(0)
-  ingressos Ingresso[]
-  lanches   ItemPedidoLanche[]
+  status     String             @default("CONCLUIDO")
+  qtInteira  Int                @default(0)
+  qtMeia     Int                @default(0)
+  metodoPagamento String?
+  userId     Int?
+  user       User?              @relation(fields: [userId], references: [id])
+  ingressos  Ingresso[]
+  lanches    ItemPedidoLanche[]
 }
 
 model ItemPedidoLanche {

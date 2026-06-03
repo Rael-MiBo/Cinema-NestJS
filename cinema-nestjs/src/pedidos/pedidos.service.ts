@@ -1,7 +1,13 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePedidoDto } from './dto/create-pedido.dto';
 import { UpdatePedidoDto } from './dto/update-pedido.dto';
+import { CheckoutDto } from './dto/checkout.dto';
 
 @Injectable()
 export class PedidosService {
@@ -9,6 +15,102 @@ export class PedidosService {
     throw new Error('Method not implemented.');
   }
   constructor(private readonly prisma: PrismaService) {}
+
+  async checkout(userId: number, dto: CheckoutDto) {
+    if (!dto.ingressos?.length) {
+      throw new BadRequestException('Selecione ao menos um assento.');
+    }
+
+    const sessao = await this.prisma.sessao.findUnique({
+      where: { id: dto.sessaoId },
+      include: { sala: true, filme: true },
+    });
+
+    if (!sessao) {
+      throw new NotFoundException('Sessão não encontrada.');
+    }
+
+    const mapaPoltronas = sessao.sala.poltronas as number[][];
+    const ingressoIds: number[] = [];
+    let qtInteira = 0;
+    let qtMeia = 0;
+    let valorTotal = 0;
+
+    for (const item of dto.ingressos) {
+      if (!mapaPoltronas[item.fila] || mapaPoltronas[item.fila][item.assento] !== 1) {
+        throw new BadRequestException(
+          `Poltrona inválida: fila ${item.fila}, assento ${item.assento}`,
+        );
+      }
+
+      const ocupado = await this.prisma.ingresso.findFirst({
+        where: {
+          sessaoId: dto.sessaoId,
+          fila: item.fila,
+          assento: item.assento,
+        },
+      });
+
+      if (ocupado) {
+        throw new ConflictException(
+          `Assento ${item.fila + 1}-${item.assento + 1} já ocupado.`,
+        );
+      }
+
+      let valorFinal = sessao.valorIngresso;
+      const isMeia = item.tipo.toLowerCase().trim() === 'meia';
+      if (isMeia) {
+        valorFinal = sessao.valorIngresso / 2;
+        qtMeia++;
+      } else {
+        qtInteira++;
+      }
+
+      valorTotal += valorFinal;
+
+      const ingresso = await this.prisma.ingresso.create({
+        data: {
+          tipo: item.tipo,
+          valorPago: valorFinal,
+          sessaoId: dto.sessaoId,
+          fila: item.fila,
+          assento: item.assento,
+        },
+      });
+
+      ingressoIds.push(ingresso.id);
+    }
+
+    const pedido = await this.prisma.pedido.create({
+      data: {
+        valorTotal,
+        qtInteira,
+        qtMeia,
+        metodoPagamento: dto.metodoPagamento,
+        userId,
+        ingressos: { connect: ingressoIds.map((id) => ({ id })) },
+      },
+    });
+
+    if (dto.lancheComboIds?.length) {
+      for (const lancheId of dto.lancheComboIds) {
+        await this.adicionarLanche(pedido.id, lancheId);
+      }
+    }
+
+    return this.findOne(pedido.id);
+  }
+
+  findByUser(userId: number) {
+    return this.prisma.pedido.findMany({
+      where: { userId },
+      include: {
+        ingressos: { include: { sessao: { include: { filme: true, sala: true } } } },
+        lanches: { include: { lanche: true } },
+      },
+      orderBy: { dataHora: 'desc' },
+    });
+  }
 
   async create(createPedidoDto: CreatePedidoDto) {
     let qtInteira = 0;
@@ -56,7 +158,14 @@ export class PedidosService {
   async findOne(id: number) {
     const pedido = await this.prisma.pedido.findUnique({
       where: { id },
-      include: { ingressos: true, lanches: { include: { lanche: true } } },
+      include: {
+        ingressos: {
+          include: {
+            sessao: { include: { filme: true, sala: true } },
+          },
+        },
+        lanches: { include: { lanche: true } },
+      },
     });
     if (!pedido) throw new NotFoundException('Pedido não encontrado.');
     return pedido;

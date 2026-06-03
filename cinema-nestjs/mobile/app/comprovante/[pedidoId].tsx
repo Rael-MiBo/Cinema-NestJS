@@ -1,0 +1,100 @@
+import { useEffect, useState } from 'react';
+import { ScrollView, Text, View, ActivityIndicator } from 'react-native';
+import { Stack, useLocalSearchParams } from 'expo-router';
+import { getPedidoLocal } from '../../src/db/tickets';
+import { api } from '../../src/api/client';
+import { savePedidoLocal } from '../../src/db/tickets';
+import type { Pedido } from '../../src/types';
+import { shared } from '../../src/theme';
+
+export default function ComprovanteScreen() {
+  const { pedidoId } = useLocalSearchParams<{ pedidoId: string }>();
+  const [pedido, setPedido] = useState<Pedido | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const id = Number(pedidoId);
+      let p = await getPedidoLocal(id);
+      if (!p) {
+        try {
+          p = await api<Pedido>(`/pedidos/${pedidoId}`);
+          await savePedidoLocal(p, true);
+        } catch {
+          /* ignore */
+        }
+      }
+      setPedido(p);
+    })();
+  }, [pedidoId]);
+
+  if (!pedido) {
+    return (
+      <View style={[shared.container, { justifyContent: 'center' }]}>
+        <ActivityIndicator color="#3b82f6" />
+      </View>
+    );
+  }
+
+  return (
+    <>
+      <Stack.Screen options={{ title: 'Comprovante' }} />
+      <ScrollView style={shared.container}>
+        <View style={shared.card}>
+          <Text style={{ color: '#22c55e', fontSize: 20, fontWeight: '700' }}>
+            Pagamento confirmado
+          </Text>
+          <Text style={{ color: '#94a3b8', marginTop: 8 }}>
+            Pedido #{pedido.id}
+          </Text>
+          <Text style={{ color: '#94a3b8' }}>
+            {new Date(pedido.dataHora).toLocaleString('pt-BR')}
+          </Text>
+          <Text style={{ color: '#fff', marginTop: 12, fontSize: 18 }}>
+            Total: R$ {pedido.valorTotal.toFixed(2)}
+          </Text>
+          {pedido.metodoPagamento ? (
+            <Text style={{ color: '#cbd5e1' }}>
+              Pagamento: {pedido.metodoPagamento}
+            </Text>
+          ) : null}
+        </View>
+
+        <Text style={shared.title}>Ingressos</Text>
+        {pedido.ingressos.map((ing) => (
+          <View key={ing.id} style={shared.card}>
+            <Text style={{ color: '#fff', fontWeight: '600' }}>
+              {ing.sessao?.filme?.titulo ?? 'Filme'}
+            </Text>
+            <Text style={{ color: '#94a3b8' }}>
+              {ing.sessao?.data
+                ? new Date(ing.sessao.data).toLocaleString('pt-BR')
+                : ''}{' '}
+              · Sala {ing.sessao?.sala?.numero}
+            </Text>
+            <Text style={{ color: '#cbd5e1', marginTop: 4 }}>
+              Fila {ing.fila + 1} · Assento {ing.assento + 1} · {ing.tipo} · R${' '}
+              {ing.valorPago.toFixed(2)}
+            </Text>
+          </View>
+        ))}
+
+        {pedido.lanches.length > 0 && (
+          <>
+            <Text style={shared.title}>Combos</Text>
+            {pedido.lanches.map((item) => (
+              <View key={item.lanche.id} style={shared.card}>
+                <Text style={{ color: '#fff' }}>
+                  {item.quantidade}x {item.lanche.nome}
+                </Text>
+              </View>
+            ))}
+          </>
+        )}
+
+        <Text style={{ color: '#64748b', textAlign: 'center', marginTop: 24 }}>
+          Apresente este comprovante na entrada. Dados salvos localmente e sincronizados com o servidor.
+        </Text>
+      </ScrollView>
+    </>
+  );
+}

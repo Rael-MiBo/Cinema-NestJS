@@ -6,7 +6,8 @@ let filmeEditandoId = null;
 let salaEditandoId = null;
 let sessaoEditandoId = null;
 let lancheEditandoId = null;
-const API_URL = 'http://localhost:3000';
+// Usa o mesmo host do navegador (funciona no PC e no celular na rede local)
+const API_URL = window.location.origin;
 
 function toast(msg, tipo = 'success') {
   const container = document.getElementById('toast-container');
@@ -41,12 +42,21 @@ async function fazerLogin() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
-    if (!res.ok) throw new Error('Falha no login');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(
+        typeof err.message === 'string' ? err.message : 'Credenciais inválidas',
+      );
+    }
     const data = await res.json();
     localStorage.setItem('token', data.access_token);
     verificarAcesso();
-  } catch {
-    toast('Credenciais inválidas ou erro na conexão.', 'error');
+  } catch (err) {
+    const msg =
+      err?.message === 'Failed to fetch'
+        ? 'Não foi possível conectar à API. Verifique se o servidor está rodando.'
+        : 'Credenciais inválidas.';
+    toast(msg, 'error');
   }
 }
 

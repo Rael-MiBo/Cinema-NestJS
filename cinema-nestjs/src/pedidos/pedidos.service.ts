@@ -5,6 +5,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PdfService } from '../pdf/pdf.service';
 import { CreatePedidoDto } from './dto/create-pedido.dto';
 import { UpdatePedidoDto } from './dto/update-pedido.dto';
 import { CheckoutDto } from './dto/checkout.dto';
@@ -14,7 +15,10 @@ export class PedidosService {
   update(arg0: number, updatePedidoDto: UpdatePedidoDto) {
     throw new Error('Method not implemented.');
   }
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pdfService: PdfService,
+  ) {}
 
   async checkout(userId: number, dto: CheckoutDto) {
     if (!dto.ingressos?.length) {
@@ -37,7 +41,10 @@ export class PedidosService {
     let valorTotal = 0;
 
     for (const item of dto.ingressos) {
-      if (!mapaPoltronas[item.fila] || mapaPoltronas[item.fila][item.assento] !== 1) {
+      if (
+        !mapaPoltronas[item.fila] ||
+        mapaPoltronas[item.fila][item.assento] !== 1
+      ) {
         throw new BadRequestException(
           `Poltrona inválida: fila ${item.fila}, assento ${item.assento}`,
         );
@@ -105,7 +112,9 @@ export class PedidosService {
     return this.prisma.pedido.findMany({
       where: { userId },
       include: {
-        ingressos: { include: { sessao: { include: { filme: true, sala: true } } } },
+        ingressos: {
+          include: { sessao: { include: { filme: true, sala: true } } },
+        },
         lanches: { include: { lanche: true } },
       },
       orderBy: { dataHora: 'desc' },
@@ -124,10 +133,12 @@ export class PedidosService {
       });
 
       for (const ingresso of ingressos) {
-        if (ingresso.pedidoId) throw new BadRequestException(`Ingresso #${ingresso.id} ocupado.`);
+        if (ingresso.pedidoId)
+          throw new BadRequestException(`Ingresso #${ingresso.id} ocupado.`);
         valorTotal += ingresso.valorPago;
         connectIngressos.push({ id: ingresso.id });
-        if (ingresso.tipo.toLowerCase().trim() === 'meia') qtMeia++; else qtInteira++;
+        if (ingresso.tipo.toLowerCase().trim() === 'meia') qtMeia++;
+        else qtInteira++;
       }
     }
 
@@ -140,7 +151,10 @@ export class PedidosService {
       },
     });
 
-    if (createPedidoDto.lancheComboIds && createPedidoDto.lancheComboIds.length > 0) {
+    if (
+      createPedidoDto.lancheComboIds &&
+      createPedidoDto.lancheComboIds.length > 0
+    ) {
       for (const lancheId of createPedidoDto.lancheComboIds) {
         await this.adicionarLanche(pedido.id, lancheId);
       }
@@ -173,56 +187,83 @@ export class PedidosService {
 
   async adicionarLanche(pedidoId: number, lancheId: number) {
     const pedido = await this.findOne(pedidoId);
-    const lanche = await this.prisma.lancheCombo.findUnique({ where: { id: lancheId } });
-    if (!lanche || lanche.qtUnidade <= 0) throw new BadRequestException('Lanche indisponível.');
+    const lanche = await this.prisma.lancheCombo.findUnique({
+      where: { id: lancheId },
+    });
+    if (!lanche || lanche.qtUnidade <= 0)
+      throw new BadRequestException('Lanche indisponível.');
 
     await this.prisma.lancheCombo.update({
       where: { id: lancheId },
-      data: { qtUnidade: lanche.qtUnidade - 1, subtotal: (lanche.qtUnidade - 1) * lanche.valorUnitario }
+      data: {
+        qtUnidade: lanche.qtUnidade - 1,
+        subtotal: (lanche.qtUnidade - 1) * lanche.valorUnitario,
+      },
     });
 
-    const item = await this.prisma.itemPedidoLanche.findFirst({ where: { pedidoId, lancheId } });
-    
+    const item = await this.prisma.itemPedidoLanche.findFirst({
+      where: { pedidoId, lancheId },
+    });
+
     if (item) {
-      await this.prisma.itemPedidoLanche.update({ where: { id: item.id }, data: { quantidade: item.quantidade + 1 } });
+      await this.prisma.itemPedidoLanche.update({
+        where: { id: item.id },
+        data: { quantidade: item.quantidade + 1 },
+      });
     } else {
-      await this.prisma.itemPedidoLanche.create({ data: { pedidoId, lancheId, quantidade: 1 } });
+      await this.prisma.itemPedidoLanche.create({
+        data: { pedidoId, lancheId, quantidade: 1 },
+      });
     }
 
     return this.prisma.pedido.update({
       where: { id: pedidoId },
       data: { valorTotal: pedido.valorTotal + lanche.valorUnitario },
-      include: { ingressos: true, lanches: { include: { lanche: true } } }
+      include: { ingressos: true, lanches: { include: { lanche: true } } },
     });
   }
 
   async removerLanche(pedidoId: number, lancheId: number) {
     const pedido = await this.findOne(pedidoId);
-    const item = await this.prisma.itemPedidoLanche.findFirst({ where: { pedidoId, lancheId }, include: { lanche: true } });
+    const item = await this.prisma.itemPedidoLanche.findFirst({
+      where: { pedidoId, lancheId },
+      include: { lanche: true },
+    });
     if (!item) throw new NotFoundException('Item não encontrado.');
 
     await this.prisma.lancheCombo.update({
       where: { id: lancheId },
-      data: { qtUnidade: item.lanche.qtUnidade + 1, subtotal: (item.lanche.qtUnidade + 1) * item.lanche.valorUnitario }
+      data: {
+        qtUnidade: item.lanche.qtUnidade + 1,
+        subtotal: (item.lanche.qtUnidade + 1) * item.lanche.valorUnitario,
+      },
     });
 
     if (item.quantidade > 1) {
-      await this.prisma.itemPedidoLanche.update({ where: { id: item.id }, data: { quantidade: item.quantidade - 1 } });
+      await this.prisma.itemPedidoLanche.update({
+        where: { id: item.id },
+        data: { quantidade: item.quantidade - 1 },
+      });
     } else {
       await this.prisma.itemPedidoLanche.delete({ where: { id: item.id } });
     }
 
     return this.prisma.pedido.update({
       where: { id: pedidoId },
-      data: { valorTotal: Math.max(0, pedido.valorTotal - item.lanche.valorUnitario) },
-      include: { ingressos: true, lanches: { include: { lanche: true } } }
+      data: {
+        valorTotal: Math.max(0, pedido.valorTotal - item.lanche.valorUnitario),
+      },
+      include: { ingressos: true, lanches: { include: { lanche: true } } },
     });
   }
 
   async adicionarIngresso(pedidoId: number, ingressoId: number) {
     const pedido = await this.findOne(pedidoId);
-    const ingresso = await this.prisma.ingresso.findUnique({ where: { id: ingressoId } });
-    if (!ingresso || ingresso.pedidoId) throw new BadRequestException('Ingresso indisponível.');
+    const ingresso = await this.prisma.ingresso.findUnique({
+      where: { id: ingressoId },
+    });
+    if (!ingresso || ingresso.pedidoId)
+      throw new BadRequestException('Ingresso indisponível.');
 
     const isMeia = ingresso.tipo.toLowerCase().trim() === 'meia';
 
@@ -232,15 +273,17 @@ export class PedidosService {
         valorTotal: pedido.valorTotal + ingresso.valorPago,
         qtInteira: isMeia ? pedido.qtInteira : pedido.qtInteira + 1,
         qtMeia: isMeia ? pedido.qtMeia + 1 : pedido.qtMeia,
-        ingressos: { connect: { id: ingressoId } }
+        ingressos: { connect: { id: ingressoId } },
       },
-      include: { ingressos: true, lanches: { include: { lanche: true } } }
+      include: { ingressos: true, lanches: { include: { lanche: true } } },
     });
   }
 
   async removerIngresso(pedidoId: number, ingressoId: number) {
     const pedido = await this.findOne(pedidoId);
-    const ingresso = await this.prisma.ingresso.findUnique({ where: { id: ingressoId } });
+    const ingresso = await this.prisma.ingresso.findUnique({
+      where: { id: ingressoId },
+    });
     if (!ingresso) throw new NotFoundException('Ingresso não encontrado.');
 
     const isMeia = ingresso.tipo.toLowerCase().trim() === 'meia';
@@ -251,10 +294,13 @@ export class PedidosService {
       where: { id: pedidoId },
       data: {
         valorTotal: Math.max(0, pedido.valorTotal - ingresso.valorPago),
-        qtInteira: Math.max(0, isMeia ? pedido.qtInteira : pedido.qtInteira - 1),
+        qtInteira: Math.max(
+          0,
+          isMeia ? pedido.qtInteira : pedido.qtInteira - 1,
+        ),
         qtMeia: Math.max(0, isMeia ? pedido.qtMeia - 1 : pedido.qtMeia),
       },
-      include: { ingressos: true, lanches: { include: { lanche: true } } }
+      include: { ingressos: true, lanches: { include: { lanche: true } } },
     });
   }
 
@@ -263,7 +309,12 @@ export class PedidosService {
     for (const item of pedido.lanches) {
       await this.prisma.lancheCombo.update({
         where: { id: item.lancheId },
-        data: { qtUnidade: item.lanche.qtUnidade + item.quantidade, subtotal: (item.lanche.qtUnidade + item.quantidade) * item.lanche.valorUnitario }
+        data: {
+          qtUnidade: item.lanche.qtUnidade + item.quantidade,
+          subtotal:
+            (item.lanche.qtUnidade + item.quantidade) *
+            item.lanche.valorUnitario,
+        },
       });
     }
     await this.prisma.ingresso.deleteMany({ where: { pedidoId: id } });
@@ -271,20 +322,48 @@ export class PedidosService {
   }
 
   async reembolsar(id: number) {
-  const pedido = await this.prisma.pedido.findUnique({
-    where: { id }
-  });
+    const pedido = await this.prisma.pedido.findUnique({
+      where: { id },
+    });
 
-  if (!pedido) throw new NotFoundException('Pedido não encontrado');
+    if (!pedido) throw new NotFoundException('Pedido não encontrado');
 
-  return this.prisma.pedido.update({
-    where: { id },
-    data: {
-      status: 'REEMBOLSADO',
-      valorTotal: 0,
-      qtInteira: 0,
-      qtMeia: 0
-    },
-  });
-}
+    return this.prisma.pedido.update({
+      where: { id },
+      data: {
+        status: 'REEMBOLSADO',
+        valorTotal: 0,
+        qtInteira: 0,
+        qtMeia: 0,
+      },
+    });
+  }
+
+  async generateReceipt(id: number): Promise<Buffer> {
+    const pedido = await this.findOne(id);
+
+    const receiptData = {
+      pedidoId: pedido.id,
+      dataHora: new Date(pedido.dataHora).toLocaleString('pt-BR'),
+      valorTotal: pedido.valorTotal,
+      metodoPagamento: pedido.metodoPagamento || 'Não especificado',
+      ingressos: pedido.ingressos.map((ing) => ({
+        filme: ing.sessao?.filme?.titulo || 'Filme',
+        sala: String(ing.sessao?.sala?.numero || 'N/A'),
+        data: ing.sessao?.data
+          ? new Date(ing.sessao.data).toLocaleString('pt-BR')
+          : 'Data não disponível',
+        fila: ing.fila,
+        assento: ing.assento,
+        tipo: ing.tipo,
+        valorPago: ing.valorPago,
+      })),
+      lanches: pedido.lanches.map((item) => ({
+        quantidade: item.quantidade,
+        nome: item.lanche.nome,
+      })),
+    };
+
+    return this.pdfService.generateReceipt(receiptData);
+  }
 }

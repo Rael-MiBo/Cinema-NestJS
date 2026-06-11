@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { randomBytes } from 'crypto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -39,17 +40,44 @@ export class AuthService {
     };
   }
 
-  async login(email: string, pass: string) {
+async login(email: string, pass: string) {
     const user = await this.prisma.user.findUnique({
       where: { email },
       include: { profile: true },
     });
 
-    if (!user || user.password !== pass) {
+    if (!user || !user.profile) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    return this.buildToken(user);
+    let isPasswordValid = false;
+
+    const isHashed = user.password.startsWith('$2b$') || user.password.startsWith('$2a$');
+
+    if (isHashed) {
+      isPasswordValid = await bcrypt.compare(pass, user.password);
+    } else {
+      isPasswordValid = user.password === pass;
+
+      if (isPasswordValid) {
+        const hashedPassword = await bcrypt.hash(pass, 10);
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { password: hashedPassword },
+        });
+      }
+    }
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Credenciais inválidas');
+    }
+
+    return this.buildToken({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      profile: { name: user.profile.name },
+    });
   }
 
   async register(dto: RegisterDto) {
@@ -62,26 +90,33 @@ export class AuthService {
     }
 
     let profile = await this.prisma.profile.findFirst({
-      where: { name: 'CLIENTE' },
+      where: { name: 'USER' },
     });
 
     if (!profile) {
       profile = await this.prisma.profile.create({
-        data: { name: 'CLIENTE' },
+        data: { name: 'USER' },
       });
     }
+
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
 
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
         name: dto.name,
-        password: dto.password,
+        password: hashedPassword,
         profileId: profile.id,
       },
       include: { profile: true },
     });
 
-    return this.buildToken(user);
+    return this.buildToken({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      profile: { name: user.profile.name },
+    });
   }
 
   async forgotPassword(email: string) {
@@ -118,9 +153,11 @@ export class AuthService {
       throw new BadRequestException('Token inválido ou expirado');
     }
 
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
     await this.prisma.user.update({
       where: { email: reset.email },
-      data: { password: newPassword },
+      data: { password: hashedPassword },
     });
 
     await this.prisma.passwordReset.delete({ where: { token } });
@@ -131,7 +168,7 @@ export class AuthService {
   async me(userId: number) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { profile: true, address: true },
+      include: { profile: true },
     });
 
     if (!user) {
@@ -140,5 +177,16 @@ export class AuthService {
 
     const { password, ...safe } = user;
     return safe;
+  }
+
+  async checkEmail(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    return {
+      exists: !!user,
+      available: !user,
+    };
   }
 }

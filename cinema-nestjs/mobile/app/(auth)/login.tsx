@@ -6,8 +6,8 @@ import { shared } from '../../src/theme';
 
 export default function LoginScreen() {
   const { login } = useAuth();
-  const [email, setEmail] = useState('demo@cinema.com');
-  const [password, setPassword] = useState('123456');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -44,14 +44,31 @@ export default function LoginScreen() {
         onChangeText={setPassword}
       />
       <Pressable style={shared.button} onPress={onSubmit} disabled={loading}>
-        <Text style={shared.buttonText}>{loading ? 'Entrando...' : 'Entrar'}</Text>
+        <Text style={shared.buttonText}>
+          {loading ? 'Entrando...' : 'Entrar'}
+        </Text>
       </Pressable>
-      <Link href="/(auth)/register" style={shared.link}>
-        Criar conta
-      </Link>
-      <Link href="/(auth)/forgot-password" style={shared.link}>
-        Esqueci minha senha
-      </Link>
+      <View style={{ gap: 8, marginTop: 16, flexDirection: 'row' }}>
+        <Link href="/(auth)/register" style={[shared.link, { flex: 1 }]}>
+          Criar conta
+        </Link>
+        <Link
+          href="/(auth)/forgot-password"
+          style={[
+            shared.link,
+            {
+              flex: 1,
+              backgroundColor: '#1e293b',
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              borderRadius: 6,
+              textAlign: 'center',
+            },
+          ]}
+        >
+          Recuperar senha
+        </Link>
+      </View>
     </View>
   );
 }

@@ -10,7 +10,12 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { api } from '../../src/api/client';
 import { SeatMap } from '../../src/components/SeatMap';
 import { savePedidoLocal } from '../../src/db/tickets';
-import type { LancheCombo, Pedido, Sessao, SeatSelection } from '../../src/types';
+import type {
+  LancheCombo,
+  Pedido,
+  Sessao,
+  SeatSelection,
+} from '../../src/types';
 import { shared, colors } from '../../src/theme';
 
 type Step = 'assentos' | 'lanches' | 'pagamento';
@@ -153,7 +158,11 @@ export default function CompraScreen() {
                 fontWeight: step === s ? '700' : '400',
               }}
             >
-              {s === 'assentos' ? '1.Assentos' : s === 'lanches' ? '2.Lanches' : '3.Pagar'}
+              {s === 'assentos'
+                ? '1.Assentos'
+                : s === 'lanches'
+                  ? '2.Lanches'
+                  : '3.Pagar'}
             </Text>
           ))}
         </View>
@@ -169,7 +178,10 @@ export default function CompraScreen() {
             {selected.map((s) => (
               <Pressable
                 key={`${s.fila}-${s.assento}`}
-                style={[shared.card, { flexDirection: 'row', justifyContent: 'space-between' }]}
+                style={[
+                  shared.card,
+                  { flexDirection: 'row', justifyContent: 'space-between' },
+                ]}
                 onPress={() => toggleTipo(s.fila, s.assento)}
               >
                 <Text style={{ color: '#fff' }}>
@@ -196,15 +208,25 @@ export default function CompraScreen() {
                 key={l.id}
                 style={[
                   shared.card,
-                  lancheIds.includes(l.id) && { borderWidth: 2, borderColor: colors.primary },
+                  lancheIds.includes(l.id) && {
+                    borderWidth: 2,
+                    borderColor: colors.primary,
+                  },
                 ]}
                 onPress={() => toggleLanche(l.id)}
               >
-                <Text style={{ color: '#fff', fontWeight: '600' }}>{l.nome}</Text>
-                <Text style={{ color: '#94a3b8' }}>R$ {l.valorUnitario.toFixed(2)}</Text>
+                <Text style={{ color: '#fff', fontWeight: '600' }}>
+                  {l.nome}
+                </Text>
+                <Text style={{ color: '#94a3b8' }}>
+                  R$ {l.valorUnitario.toFixed(2)}
+                </Text>
               </Pressable>
             ))}
-            <Pressable style={shared.button} onPress={() => setStep('pagamento')}>
+            <Pressable
+              style={shared.button}
+              onPress={() => setStep('pagamento')}
+            >
               <Text style={shared.buttonText}>Ir para pagamento</Text>
             </Pressable>
           </>
@@ -218,7 +240,13 @@ export default function CompraScreen() {
             {['PIX', 'Cartão', 'Dinheiro'].map((m) => (
               <Pressable
                 key={m}
-                style={[shared.card, metodo === m && { borderColor: colors.primary, borderWidth: 2 }]}
+                style={[
+                  shared.card,
+                  metodo === m && {
+                    borderColor: colors.primary,
+                    borderWidth: 2,
+                  },
+                ]}
                 onPress={() => setMetodo(m)}
               >
                 <Text style={{ color: '#fff' }}>{m}</Text>

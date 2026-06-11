@@ -25,6 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const applyAuth = useCallback(async (data: AuthResponse) => {
+    console.log('USER:', data.user);
     await setToken(data.access_token);
     setUser(data.user);
     try {
@@ -45,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       id: me.id,
       email: me.email,
       name: me.name,
-      role: me.profile?.name ?? 'CLIENTE',
+      role: me.profile?.name ?? 'USER',
     });
     await syncPedidosFromServer();
   }, []);

@@ -549,8 +549,9 @@ async function carregarDetalhesPedido(idForcado = null) {
           <div class="pedido-id">Pedido #${pedido.id}</div>
           <span class="badge ${isReembolsado ? 'badge-danger' : 'badge-success'}">${isReembolsado ? 'Reembolsado' : 'Concluído'}</span>
         </div>
-        <div style="display:flex;align-items:center;gap:12px;">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
           <span class="pedido-valor" style="color:${cor};">R$ ${pedido.valorTotal.toFixed(2).replace('.', ',')}</span>
+          <button onclick="emitirComprovantePDF(${pedido.id})" style="background:var(--primary-dim);color:var(--primary);border:1px solid rgba(59,130,246,0.2);width:auto;padding:8px 16px;"><i class="ph ph-file-pdf"></i> Emitir Comprovante</button>
           ${!isReembolsado && payload.role === 'ADMIN' ? `<button onclick="reembolsarPedido(${pedido.id})" style="background:var(--red-dim);color:var(--red);border:1px solid rgba(229,9,20,0.2);width:auto;padding:8px 16px;"><i class="ph ph-arrow-counter-clockwise"></i> Reembolsar</button>` : ''}
         </div>
       </div>
@@ -968,5 +969,173 @@ document.getElementById('form-pedido').onsubmit = async (e) => {
     toast(err.message, 'error');
   }
 };
+
+function abrirRecuperarSenha() {
+  const email = prompt('Digite seu e-mail:');
+  if (!email) return;
+
+  const novaSenha = prompt('Digite a nova senha:');
+  if (!novaSenha) return;
+
+  fetch(`${API_URL}/auth/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      if (!data.resetToken)
+        throw new Error('Falha ao gerar token de redefinição');
+
+      return fetch(`${API_URL}/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: data.resetToken,
+          newPassword: novaSenha,
+        }),
+      });
+    })
+    .then((res) => {
+      if (!res.ok) throw new Error('Erro ao redefinir senha');
+      return res.json();
+    })
+    .then(() => {
+      toast(
+        'Senha alterada com sucesso! Faça login com a nova senha.',
+        'success',
+      );
+    })
+    .catch((err) => {
+      toast(err.message || 'Erro ao recuperar senha', 'error');
+    });
+}
+
+function abrirRegistro() {
+  document.getElementById('modal-registro').style.display = 'flex';
+}
+
+function fecharModalRegistro() {
+  document.getElementById('modal-registro').style.display = 'none';
+  document.getElementById('registro-nome').value = '';
+  document.getElementById('registro-email').value = '';
+  document.getElementById('registro-senha').value = '';
+  document.getElementById('email-feedback').style.display = 'none';
+  document.getElementById('email-msg').style.display = 'none';
+}
+
+async function verificarEmailDisponivel() {
+  const emailInput = document.getElementById('registro-email');
+  const email = emailInput.value.trim();
+  const feedback = document.getElementById('email-feedback');
+  const msg = document.getElementById('email-msg');
+
+  if (!email) {
+    feedback.style.display = 'none';
+    msg.style.display = 'none';
+    return;
+  }
+
+  try {
+    const res = await fetch(
+      `${API_URL}/auth/check-email?email=${encodeURIComponent(email)}`,
+    );
+    const data = await res.json();
+
+    feedback.style.display = 'block';
+    msg.style.display = 'block';
+
+    if (data.available) {
+      feedback.innerHTML = '✅';
+      feedback.style.color = 'var(--green)';
+      msg.textContent = 'E-mail disponível';
+      msg.style.color = 'var(--green)';
+      emailInput.style.borderColor = 'var(--green)';
+    } else {
+      feedback.innerHTML = '❌';
+      feedback.style.color = 'var(--red)';
+      msg.textContent = 'Este e-mail já está cadastrado';
+      msg.style.color = 'var(--red)';
+      emailInput.style.borderColor = 'var(--red)';
+    }
+  } catch (err) {
+    console.error(err);
+    feedback.style.display = 'none';
+    msg.style.display = 'none';
+  }
+}
+
+async function fazerRegistro() {
+  const nome = document.getElementById('registro-nome').value.trim();
+  const email = document.getElementById('registro-email').value.trim();
+  const senha = document.getElementById('registro-senha').value;
+
+  if (!nome || !email || !senha) {
+    return toast('Preencha todos os campos', 'error');
+  }
+
+  // Verificar se o e-mail está disponível
+  try {
+    const checkRes = await fetch(
+      `${API_URL}/auth/check-email?email=${encodeURIComponent(email)}`,
+    );
+    const checkData = await checkRes.json();
+
+    if (!checkData.available) {
+      return toast('Este e-mail já está cadastrado', 'error');
+    }
+  } catch (err) {
+    return toast('Erro ao verificar e-mail', 'error');
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: nome, email, password: senha }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Erro ao registrar');
+    }
+
+    const data = await res.json();
+    toast('Usuário registrado com sucesso! Faça login agora.', 'success');
+    fecharModalRegistro();
+
+    if (data.access_token) {
+      localStorage.setItem('token', data.access_token);
+      verificarAcesso();
+    }
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+async function emitirComprovantePDF(pedidoId) {
+  try {
+    const response = await fetch(`${API_URL}/pedidos/${pedidoId}/comprovante`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    });
+
+    if (!response.ok) throw new Error('Erro ao gerar comprovante');
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `comprovante_pedido_${pedidoId}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    toast('Comprovante baixado com sucesso!', 'success');
+  } catch (err) {
+    toast(err.message || 'Erro ao emitir comprovante', 'error');
+  }
+}
 
 window.addEventListener('load', verificarAcesso);

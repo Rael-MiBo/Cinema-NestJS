@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { PedidosService } from './pedidos.service';
 import { PedidosController } from './pedidos.controller';
 import { PrismaModule } from '../prisma/prisma.module';
+import { PdfModule } from '../pdf/pdf.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, PdfModule],
   controllers: [PedidosController],
   providers: [PedidosService],
 })

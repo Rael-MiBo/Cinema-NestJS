@@ -1,15 +1,34 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, Text, View, ActivityIndicator } from 'react-native';
+import {
+  ScrollView,
+  Text,
+  View,
+  ActivityIndicator,
+  Pressable,
+  Alert,
+  Platform,
+} from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { getPedidoLocal } from '../../src/db/tickets';
-import { api } from '../../src/api/client';
+import { api, getToken } from '../../src/api/client';
 import { savePedidoLocal } from '../../src/db/tickets';
+import { API_URL } from '../../src/config';
 import type { Pedido } from '../../src/types';
 import { shared } from '../../src/theme';
+import { Buffer } from 'buffer';
+
+let FileSystem: any = null;
+let Sharing: any = null;
+
+if (Platform.OS !== 'web') {
+  FileSystem = require('expo-file-system');
+  Sharing = require('expo-sharing');
+}
 
 export default function ComprovanteScreen() {
   const { pedidoId } = useLocalSearchParams<{ pedidoId: string }>();
   const [pedido, setPedido] = useState<Pedido | null>(null);
+  const [loadingPdf, setLoadingPdf] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -34,6 +53,54 @@ export default function ComprovanteScreen() {
       </View>
     );
   }
+
+  const emitirComprovante = async () => {
+    setLoadingPdf(true);
+    try {
+      const token = await getToken();
+      const response = await fetch(
+        `${API_URL}/pedidos/${pedidoId}/comprovante`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!response.ok) throw new Error('Erro ao gerar comprovante');
+
+      if (Platform.OS === 'web') {
+        // Web: Open PDF in new tab
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      } else {
+        // Native: Save and share
+        const arrayBuffer = await response.arrayBuffer();
+        const base64 = Buffer.from(arrayBuffer).toString('base64');
+
+        const fileUri = `${FileSystem.documentDirectory}comprovante_${pedidoId}.pdf`;
+
+        await FileSystem.writeAsStringAsync(fileUri, base64, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'application/pdf',
+            dialogTitle: `Comprovante Pedido #${pedidoId}`,
+          });
+        } else {
+          Alert.alert('Sucesso', 'Comprovante salvo com sucesso!');
+        }
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível gerar o comprovante');
+      console.error(error);
+    } finally {
+      setLoadingPdf(false);
+    }
+  };
 
   return (
     <>
@@ -91,9 +158,15 @@ export default function ComprovanteScreen() {
           </>
         )}
 
-        <Text style={{ color: '#64748b', textAlign: 'center', marginTop: 24 }}>
-          Apresente este comprovante na entrada. Dados salvos localmente e sincronizados com o servidor.
-        </Text>
+        <Pressable
+              style={[shared.button, { marginTop: 24, marginBottom: 32 }]}
+              onPress={emitirComprovante}
+              disabled={loadingPdf}
+            >
+              <Text style={shared.buttonText}>
+                {loadingPdf ? 'Gerando PDF...' : '📄 Emitir Comprovante (PDF)'}
+              </Text>
+            </Pressable>
       </ScrollView>
     </>
   );

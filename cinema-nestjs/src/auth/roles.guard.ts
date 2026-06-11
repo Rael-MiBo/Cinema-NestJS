@@ -10,11 +10,14 @@ export class RolesGuard implements CanActivate {
     if (!requiredRoles) {
       return true;
     }
-    const { user } = context.switchToHttp().getRequest();
     
-    if (!requiredRoles.includes(user.role)) {
+    const request = context.switchToHttp().getRequest();
+    const user = request.user;
+    
+    if (!user || !user.role || !requiredRoles.includes(user.role)) {
       throw new ForbiddenException('Acesso restrito a administradores');
     }
+    
     return true;
   }
 }

@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "Node16",
+    "moduleResolution": "node16",
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -28,6 +28,5 @@
     "mobile",
     "test",
     "prisma"
-  ],
-  "extends": "expo/tsconfig.base"
+  ]
 }

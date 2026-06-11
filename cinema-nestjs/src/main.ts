@@ -14,6 +14,17 @@ async function bootstrap() {
     .setTitle('API do Cinema')
     .setDescription('Sistema de gerenciamento de cinema')
     .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Insira o token JWT',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
     .build();
     
   const document = SwaggerModule.createDocument(app, config);

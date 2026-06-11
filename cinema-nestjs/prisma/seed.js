@@ -62,9 +62,9 @@ async function main() {
         },
     });
     const perfilCliente = await prisma.profile.upsert({
-        where: { name: 'CLIENTE' },
+        where: { name: 'USER' },
         update: {},
-        create: { name: 'CLIENTE' },
+        create: { name: 'USER' },
     });
     await prisma.profile.upsert({
         where: { name: 'ADMIN' },

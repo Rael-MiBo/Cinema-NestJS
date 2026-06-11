@@ -38,6 +38,109 @@
         <button onclick="fazerLogin()" style="margin-top: 20px">
           <i class="ph ph-sign-in"></i> Entrar no Sistema
         </button>
+        <div style="display: flex; gap: 8px; margin-top: 12px">
+          <button
+            onclick="abrirRecuperarSenha()"
+            style="
+              flex: 1;
+              background: transparent;
+              color: var(--muted);
+              border: none;
+              text-decoration: underline;
+              cursor: pointer;
+              font-size: 0.9rem;
+            "
+          >
+            Esqueceu sua senha?
+          </button>
+          <button
+            onclick="abrirRegistro()"
+            style="
+              flex: 1;
+              background: transparent;
+              color: var(--muted);
+              border: none;
+              text-decoration: underline;
+              cursor: pointer;
+              font-size: 0.9rem;
+            "
+          >
+            Registrar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="modal-registro"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+      "
+    >
+      <div
+        style="
+          background: var(--panel);
+          border: 1px solid var(--border);
+          border-radius: var(--r);
+          padding: 24px;
+          width: 90%;
+          max-width: 400px;
+        "
+      >
+        <h2 style="margin-bottom: 20px">Criar Nova Conta</h2>
+        <div class="form-group">
+          <label>Nome</label>
+          <input
+            type="text"
+            id="registro-nome"
+            placeholder="Seu nome completo"
+          />
+        </div>
+        <div class="form-group">
+          <label>E-mail</label>
+          <div style="display: flex; gap: 8px; align-items: center">
+            <input
+              type="email"
+              id="registro-email"
+              placeholder="seu@email.com"
+              onblur="verificarEmailDisponivel()"
+              style="flex: 1"
+            />
+            <span
+              id="email-feedback"
+              style="display: none; font-size: 1.2rem"
+            ></span>
+          </div>
+          <p
+            id="email-msg"
+            style="font-size: 0.75rem; margin-top: 4px; display: none"
+          ></p>
+        </div>
+        <div class="form-group">
+          <label>Senha</label>
+          <input type="password" id="registro-senha" placeholder="••••••••" />
+        </div>
+        <button onclick="fazerRegistro()" style="width: 100%; margin-top: 16px">
+          <i class="ph ph-user-plus"></i> Registrar
+        </button>
+        <button
+          onclick="fecharModalRegistro()"
+          style="
+            width: 100%;
+            margin-top: 8px;
+            background: var(--surface);
+            color: var(--muted);
+            border: 1px solid var(--border);
+          "
+        >
+          Cancelar
+        </button>
       </div>
     </div>
 

@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -14,6 +15,9 @@ import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { SetMetadata } from '@nestjs/common';
+
+export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -41,10 +45,15 @@ export class AuthController {
     return this.authService.resetPassword(dto.token, dto.newPassword);
   }
 
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @UseGuards(AuthGuard('jwt'))
   @Get('me')
-  me(@Request() req: { user: { userId: number } }) {
+  me(@Request() req: { user: { userId: number; email: string; role: string } }) {
     return this.authService.me(req.user.userId);
+  }
+
+  @Get('check-email')
+  checkEmail(@Query('email') email: string) {
+    return this.authService.checkEmail(email);
   }
 }

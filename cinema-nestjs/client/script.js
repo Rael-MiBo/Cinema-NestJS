@@ -522,6 +522,7 @@ async function carregarDetalhesPedido(idForcado = null) {
   const id = idForcado || select.value;
   const container = document.getElementById('detalhes-pedido-container');
   const acoes = document.getElementById('acoes-pedido');
+  
 
   if (!id) {
     container.innerHTML = `<p style="color:var(--muted);text-align:center;padding:40px 20px;"><i class="ph ph-receipt" style="font-size:2rem;display:block;margin-bottom:10px;"></i>Selecione um pedido ao lado</p>`;
@@ -546,7 +547,8 @@ async function carregarDetalhesPedido(idForcado = null) {
     let html = `
       <div class="pedido-header">
         <div>
-          <div class="pedido-id">Pedido #${pedido.id}</div>
+          <div class="pedido-id">Pedido #${pedido.id} - ${pedido.ingressos[0].sessao.filme.titulo}</div>
+          
           <span class="badge ${isReembolsado ? 'badge-danger' : 'badge-success'}">${isReembolsado ? 'Reembolsado' : 'Concluído'}</span>
         </div>
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">

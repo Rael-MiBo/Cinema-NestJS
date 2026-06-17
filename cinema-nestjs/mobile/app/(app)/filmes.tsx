@@ -40,6 +40,9 @@ export default function FilmesScreen() {
   return (
     <View style={shared.container}>
       {error ? <Text style={shared.error}>{error}</Text> : null}
+      <Pressable style={[shared.button, { marginBottom: 12 }]} onPress={load}>
+        <Text style={shared.buttonText}>Sincronizar com servidor</Text>
+      </Pressable>
       <FlatList
         data={filmes}
         keyExtractor={(item) => String(item.id)}

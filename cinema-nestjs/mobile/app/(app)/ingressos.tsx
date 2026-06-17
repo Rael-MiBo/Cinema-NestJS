@@ -15,7 +15,6 @@ export default function IngressosScreen() {
     try {
       await syncPedidosFromServer();
     } catch {
-      /* offline */
     }
     const local = await listPedidosLocal();
     setPedidos(local);

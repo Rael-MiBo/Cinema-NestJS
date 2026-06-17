@@ -38,9 +38,7 @@ export default function ComprovanteScreen() {
         try {
           p = await api<Pedido>(`/pedidos/${pedidoId}`);
           await savePedidoLocal(p, true);
-        } catch {
-          /* ignore */
-        }
+        } catch {}
       }
       setPedido(p);
     })();
@@ -70,12 +68,10 @@ export default function ComprovanteScreen() {
       if (!response.ok) throw new Error('Erro ao gerar comprovante');
 
       if (Platform.OS === 'web') {
-        // Web: Open PDF in new tab
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
         window.open(url, '_blank');
       } else {
-        // Native: Save and share
         const arrayBuffer = await response.arrayBuffer();
         const base64 = Buffer.from(arrayBuffer).toString('base64');
 
@@ -159,14 +155,14 @@ export default function ComprovanteScreen() {
         )}
 
         <Pressable
-              style={[shared.button, { marginTop: 24, marginBottom: 32 }]}
-              onPress={emitirComprovante}
-              disabled={loadingPdf}
-            >
-              <Text style={shared.buttonText}>
-                {loadingPdf ? 'Gerando PDF...' : '📄 Emitir Comprovante (PDF)'}
-              </Text>
-            </Pressable>
+          style={[shared.button, { marginTop: 24, marginBottom: 32 }]}
+          onPress={emitirComprovante}
+          disabled={loadingPdf}
+        >
+          <Text style={shared.buttonText}>
+            {loadingPdf ? 'Gerando PDF...' : '📄 Emitir Comprovante (PDF)'}
+          </Text>
+        </Pressable>
       </ScrollView>
     </>
   );

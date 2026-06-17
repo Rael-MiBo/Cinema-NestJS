@@ -31,7 +31,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await syncPedidosFromServer();
     } catch {
-      /* offline: mantém dados locais */
     }
   }, []);
 

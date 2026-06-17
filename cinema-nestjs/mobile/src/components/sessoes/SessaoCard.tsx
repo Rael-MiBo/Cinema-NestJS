@@ -11,8 +11,8 @@ export function SessaoCard({ sessao }: Props) {
       style={shared.card}
       onPress={() =>
         router.push({
-          pathname: '/compra/[sessaoId]',
-          params: { sessaoId: String(sessao.id) },
+          pathname: '/sessoes/23',
+          params: { id: String(sessao.id) },
         })
       }
     >
@@ -20,7 +20,7 @@ export function SessaoCard({ sessao }: Props) {
         {new Date(sessao.data).toLocaleString('pt-BR')}
       </Text>
       <Text style={{ color: colors.muted, marginTop: 4 }}>
-        Sala {sessao.sala?.numero} · R$ {sessao.valorIngresso.toFixed(2)}
+        Sala {sessao.sala ? sessao.sala.numero : 'Não informada'} · R$ {sessao.valorIngresso.toFixed(2)}
       </Text>
     </Pressable>
   );

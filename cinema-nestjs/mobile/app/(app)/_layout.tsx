@@ -12,7 +12,7 @@ export default function AppLayout() {
         headerTintColor: '#fff',
         tabBarStyle: { backgroundColor: '#1e293b' },
         tabBarActiveTintColor: '#3b82f6',
-        tabBarInactiveTintColor: '#94a3b8',
+        tabBarInactiveTintColor: '#ffffff',
         headerRight: () => (
           <Pressable
             onPress={async () => {
